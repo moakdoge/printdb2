@@ -1,4 +1,5 @@
 from . import command, context
+from printdb.logging import traceback
 from .command import Command,CommandDetails
 from printdb.parsing import argparser
 class CommandManager:
@@ -23,10 +24,13 @@ class CommandManager:
             if command.command == cmd:
                 command_context = context.CommandContext(command)
                 args = argparser.type_check_args(command,args)
-                if args is not None:
-                    command.run(command_context, *args)
-                else:
-                    command.run(command_context, None)
+                try:
+                    if args is not None:
+                        command.run(command_context, *args)
+                    else:
+                        command.run(command_context, None)
+                except Exception as e:
+                    print(traceback.trace_error(e))
                 del command_context
                 return
     
