@@ -28,21 +28,26 @@ class CommandManager:
                 try:
                     args = argparser.type_check_args(command,args)
                 except InvalidParamType as e:
-                    return command_output.CommandOutput(str(e), ErrorCode.INVALID_PARAM_TYPE)
+                    return command_output.CommandOutput(ErrorCode.INVALID_PARAM_TYPE, output=str(e))
                 except MissingParam as e:
-                    return command_output.CommandOutput(str(e), ErrorCode.MISSING_PARAM)
+                    return command_output.CommandOutput(ErrorCode.MISSING_PARAM, output=str(e))
 
                 try:
                     if args is not None:
-                        command.run(command_context, *args)
+                        return_value = command.run(command_context, *args)
                     else:
-                        command.run(command_context, None)
+                        return_value = command.run(command_context, None)
+
+                    if not isinstance(return_value, command_output.CommandOutput):
+                        return command_output.CommandOutput(ErrorCode.SUCCESS, log=command_context.output.read())
+                    else:
+                        return_value.log = command_context.output.read()
+                        return return_value
                 except Exception as e:
                     traceback.trace_error(e)
-                return command_output.CommandOutput(command_context.output.read(), error_code=ErrorCode.SUCCESS)
-        return command_output.CommandOutput("Command not found", ErrorCode.COMMAND_NOT_FOUND)
+        return command_output.CommandOutput(ErrorCode.COMMAND_NOT_FOUND, output="Command not found")
     
-    def get_command(self, cmd: str) -> Command:
+    def get_command(self, cmd: str) -> Command | None:
         for command in self._commands:
             if command.command == cmd:
                 return command

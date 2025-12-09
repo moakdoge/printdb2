@@ -9,6 +9,7 @@ class ErrorCode(IntEnum):
 
 
 class CommandOutput():
-    def __init__(self, output: str, error_code: ErrorCode) -> None:
+    def __init__(self, error_code: ErrorCode, output: str = "", log: str = "") -> None:
         self.output = output
         self.error_code = error_code
+        self.log=  log

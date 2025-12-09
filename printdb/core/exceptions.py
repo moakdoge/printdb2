@@ -3,3 +3,6 @@ class InvalidParamType(Exception):
 
 class MissingParam(Exception):
     pass
+
+class InvalidReturnType(Exception):
+    pass

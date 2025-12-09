@@ -13,7 +13,7 @@ class CommandDetails:
     args: list[str] = field(default_factory=list)
 
 class Command:
-    def __init__(self, command: str, func: Callable, flags: CommandFlags = None, details: CommandDetails = None):
+    def __init__(self, command: str, func: Callable, flags: CommandFlags | None = None, details: CommandDetails | None = None):
         self.command = command
         self.func = func
         self.flags = flags if flags is not None else CommandFlags()
