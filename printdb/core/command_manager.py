@@ -1,3 +1,4 @@
+import importlib.util
 from . import command, context, command_output
 from printdb.logging import traceback
 from .command_output import ErrorCode
@@ -21,6 +22,12 @@ class CommandManager:
             return func
         return decorator 
     
+    def load_plugin(self, path):
+        spec = importlib.util.spec_from_file_location("plugin_" + path, path)
+        module = importlib.util.module_from_spec(spec) # type: ignore
+        spec.loader.exec_module(module) # type: ignore
+
+        return module
     def run(self, cmd: str, args) -> command_output.CommandOutput:
         for command in self._commands:
             if command.command == cmd:
