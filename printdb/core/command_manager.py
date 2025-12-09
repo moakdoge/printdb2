@@ -47,10 +47,16 @@ class CommandManager:
 
     def run(self, cmd: str) -> command_output.CommandOutput:
         #tokenize into pipes and redirects
-        redirects = tokenizer.tokensize_redirects(cmd)
+        newcmd,mode,file = tokenizer.tokensize_redirects(cmd)
+        if mode is not None and file is not None:
+            c, args = tokenizer.tokenize_args(newcmd)
+            return self._run(c, args, redirect_file=file, redirect_mode=mode)
+        else:
+            c, args = tokenizer.tokenize_args(cmd)
+            return self._run(c, args)
         pass
 
-    def _run(self, cmd: str, args) -> command_output.CommandOutput:
+    def _run(self, cmd: str, args, redirect_file = None, redirect_mode = None) -> command_output.CommandOutput:
         '''
             DO NOT CALL! call the normal run instead, unless you are a plugin trying to run a command manually.
         '''
@@ -64,6 +70,11 @@ class CommandManager:
                 except MissingParam as e:
                     return command_output.CommandOutput(ErrorCode.MISSING_PARAM, output=str(e))
 
+
+                if redirect_file is not None and redirect_mode is not None:
+                    if redirect_mode == "a" and not os.path.exists(redirect_file):
+                        return command_output.CommandOutput(ErrorCode.FILE_NOT_FOUND, output=f"Redirect file of '{redirect_file}' does not exist and you are in append mode!")
+                    command_context.output.redirect_file(redirect_file, append=True if redirect_mode == "a" else False)
                 try:
                     if args is not None:
                         return_value = command.run(command_context, *args)

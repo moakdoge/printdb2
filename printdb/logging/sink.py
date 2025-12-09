@@ -9,7 +9,7 @@ class LogSink:
         self._masked = masked
         pass
     def redirect_file(self, file: str, append: bool = False):
-        if os.path.exists(file):
+        if os.path.exists(file) or not append:
             self._is_redirecting = True
             self._file = open(file, "w" if not append else "a")
     
@@ -18,7 +18,7 @@ class LogSink:
         if self._is_redirecting:
             self._file.write(other)
             self._file.flush()
-        if not self._masked:
+        if not self._masked and not self._is_redirecting:
             print(other,end="")
         return self
     

@@ -13,7 +13,7 @@ def tokensize_redirects(s: str):
         raise InvalidRedirect("Please provide a file!")
     file = split[split.index(c)+1]
     append = "a" if c == ">>" else "w"
-    return (split[0:split.index(c)], append, file)
+    return (" ".join(split[0:split.index(c)]), append, file)
 
 def tokenize_args(s: str) -> tuple[str, list[str]]:
     if s.startswith('"') and s.endswith('"'):

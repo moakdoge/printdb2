@@ -6,6 +6,7 @@ class ErrorCode(IntEnum):
     MISSING_PARAM=2
     INVALID_PARAM_TYPE=3
     COMMAND_NOT_FOUND=4
+    FILE_NOT_FOUND=5
 
 
 class CommandOutput():
