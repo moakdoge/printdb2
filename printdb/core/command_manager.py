@@ -4,7 +4,7 @@ from . import command, context, command_output
 from printdb.logging import traceback
 from .command_output import ErrorCode
 from .command import Command,CommandDetails
-from printdb.parsing import argparser
+from printdb.parsing import argparser, tokenizer
 from .exceptions import *
 import os
 class CommandManager:
@@ -45,7 +45,15 @@ class CommandManager:
                     self.load_plugin(os.path.join(dirpath, file))
 
 
-    def run(self, cmd: str, args) -> command_output.CommandOutput:
+    def run(self, cmd: str) -> command_output.CommandOutput:
+        #tokenize into pipes and redirects
+        redirects = tokenizer.tokensize_redirects(cmd)
+        pass
+
+    def _run(self, cmd: str, args) -> command_output.CommandOutput:
+        '''
+            DO NOT CALL! call the normal run instead, unless you are a plugin trying to run a command manually.
+        '''
         for command in self._commands:
             if command.command == cmd:
                 command_context:context.CommandContext = context.CommandContext(cmd)

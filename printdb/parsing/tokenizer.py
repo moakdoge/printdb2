@@ -1,3 +1,19 @@
+import shlex
+from printdb.core.exceptions import *
+def tokensize_redirects(s: str):
+    split = shlex.split(s)
+    if ">" in split:
+        c= ">"
+    elif ">>" in split:
+        c= ">>"
+    else:
+        return (s, None, None)
+     
+    if split.index(c)+1 > len(split):
+        raise InvalidRedirect("Please provide a file!")
+    file = split[split.index(c)+1]
+    append = "a" if c == ">>" else "w"
+    return (split[0:split.index(c)], append, file)
 
 def tokenize_args(s: str) -> tuple[str, list[str]]:
     if s.startswith('"') and s.endswith('"'):

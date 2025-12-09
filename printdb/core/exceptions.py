@@ -6,3 +6,6 @@ class MissingParam(Exception):
 
 class InvalidReturnType(Exception):
     pass
+
+class InvalidRedirect(Exception):
+    pass
