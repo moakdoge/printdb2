@@ -1,6 +1,6 @@
 import printdb
 from printdb.core import command,command_manager,context
-from printdb.parsing import tokenizer
+from printdb.parsing import tokenizer,argparser
 manager=command_manager.CommandManager()
 
 
@@ -13,5 +13,6 @@ def example_func(ctx: context.CommandContext, core: int):
 
 while True:
     content = input(">")
-    command, args = tokenizer.tokenize_args(content)
-    manager.run(command, *args)
+    cmd, args = tokenizer.tokenize_args(content)
+    print(argparser.type_check_args(manager.get_command(cmd), args))
+    manager.run(cmd, *args)
