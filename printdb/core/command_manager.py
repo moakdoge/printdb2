@@ -48,15 +48,22 @@ class CommandManager:
     def run(self, cmd: str) -> command_output.CommandOutput:
         #tokenize into pipes and redirects
         newcmd,mode,file = tokenizer.tokensize_redirects(cmd)
-        if mode is not None and file is not None:
-            c, args = tokenizer.tokenize_args(newcmd)
-            return self._run(c, args, redirect_file=file, redirect_mode=mode)
-        else:
-            c, args = tokenizer.tokenize_args(cmd)
-            return self._run(c, args)
+        pipes = tokenizer.tokenize_pipes(cmd)
+
+        out = None
+        m = len(pipes) - 1
+        for i, cmd in enumerate(pipes):
+            is_at_end = (i >= m)
+            if mode is not None and file is not None:
+                c, args = tokenizer.tokenize_args(newcmd)
+                out= self._run(c, args, redirect_file=file, redirect_mode=mode, input=out, mask_input=not is_at_end)
+            else:
+                c, args = tokenizer.tokenize_args(cmd)
+                out= self._run(c, args, input=out,mask_input=not is_at_end)
+        return out
         pass
 
-    def _run(self, cmd: str, args, redirect_file = None, redirect_mode = None) -> command_output.CommandOutput:
+    def _run(self, cmd: str, args, redirect_file = None, redirect_mode = None, input=None, mask_input = False) -> command_output.CommandOutput:
         '''
             DO NOT CALL! call the normal run instead, unless you are a plugin trying to run a command manually.
         '''
@@ -76,11 +83,14 @@ class CommandManager:
                         return command_output.CommandOutput(ErrorCode.FILE_NOT_FOUND, output=f"Redirect file of '{redirect_file}' does not exist and you are in append mode!")
                     command_context.output.redirect_file(redirect_file, append=True if redirect_mode == "a" else False)
                 try:
+                    if mask_input:
+                        command_context.output._masked = mask_input
+                    if input is not None:
+                        command_context.input+= input
                     if args is not None:
                         return_value = command.run(command_context, *args)
                     else:
                         return_value = command.run(command_context, None)
-
                     if not isinstance(return_value, command_output.CommandOutput):
                         return command_output.CommandOutput(ErrorCode.SUCCESS, log=command_context.output.read())
                     else:

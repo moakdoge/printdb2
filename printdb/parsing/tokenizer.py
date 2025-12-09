@@ -15,6 +15,23 @@ def tokensize_redirects(s: str):
     append = "a" if c == ">>" else "w"
     return (" ".join(split[0:split.index(c)]), append, file)
 
+def tokenize_pipes(s: str):
+    split = shlex.split(s)
+    if not "|" in split: 
+        return [s]
+    pipes = []
+    current_st = ""
+    for v in split:
+        if v == "|":
+            pipes.append(current_st.rstrip(" "))
+            current_st = ""
+        else:
+            if " " in v: #meaning we need an embedded quote
+                v = f'"{v}"'
+            current_st += v + ' '
+    pipes.append(current_st.rstrip(" "))
+    return pipes
+
 def tokenize_args(s: str) -> tuple[str, list[str]]:
     if s.startswith('"') and s.endswith('"'):
         s = s.lstrip('"').rstrip('"')
