@@ -6,8 +6,7 @@ manager=command_manager.CommandManager()
 
 @manager.command("example_func", "moakdoge")
 def example_func(ctx: context.CommandContext, core: int):
-    print(f"Hello, world!. Core is: {core}")
-    raise Exception("test")
+    ctx.pprint(f"Hello, world!. Core is: {core}")
     pass
 
 
