@@ -21,6 +21,7 @@ class LogSink:
         if not self._masked:
             print(other,end="")
         return self
+    
     def __iadd__(self,other):
         return self.__add__(other)
     

@@ -1,7 +1,7 @@
 import inspect
 import os
 import pathlib
-
+from printdb.core.exceptions import *
 import json5
 from printdb.core.command import Command
 from typing import Any
@@ -97,14 +97,14 @@ def type_check_args(command: Command, args: list) -> list[Any]:
                 typed.append(default)
                 pi += 1
                 continue
-            raise Exception(f"Missing required argument '{name}'")
+            raise MissingParam(f"Missing required argument '{name}'")
 
         val = provided[ai]
 
         try:
             if not isinstance(val, annotation):
                 if default is inspect._empty:
-                    raise Exception(
+                    raise InvalidParamType(
                         f"Argument '{name}' expected {annotation}, "
                         f"got {type(val)} ({val})"
                     )

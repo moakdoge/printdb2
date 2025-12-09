@@ -15,4 +15,5 @@ def example_func(ctx: context.CommandContext, core: int):
 while True:
     content = input(">")
     cmd, args = tokenizer.tokenize_args(content)
-    manager.run(cmd, args)
+    output = manager.run(cmd, args)
+    print(output.output, output.error_code)
