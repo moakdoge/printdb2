@@ -2,8 +2,14 @@ from printdb.api import *
 
 @manager.command("help", author="moakdoge")
 def help(ctx: CommandContext, command: str = ""):
-    if command == "":
+    '''
+        Provides a list of every command and details about them.
+    '''
+    if manager is not None: #im lazy
         for cmd in manager.get_commands():
+            if command != "":
+                if command != cmd.command:
+                    continue
             des=  cmd.details.description if cmd.details.description is not None else "N/A"
             aut = cmd.details.author if cmd.details.author is not None else "N/A" 
             des = des.lstrip("\n")
@@ -16,3 +22,5 @@ def help(ctx: CommandContext, command: str = ""):
             ctx.pprint(f"\t\t[[red]][[bold]]Author:[[reset]][[cyan]] {aut}")
             ctx.pprint(f"\t\t[[red]][[bold]]Description:[[reset]][[cyan]] {des}")
             ctx.print("")
+
+

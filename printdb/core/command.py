@@ -28,7 +28,7 @@ class Command:
         for name, param in sig.parameters.items():
             if param.annotation == context.CommandContext:
                 continue
-            opt = (param.default == inspect._empty)
+            opt = (param.default != inspect._empty)
             defu = param.default if not param.default == inspect._empty else None
             self.details.args.append(Arg(name, param.annotation, defu, opt))
 
