@@ -23,3 +23,10 @@ class CommandManager:
                 command_context = context.CommandContext(command)
                 command.run(command_context, *args)
                 del command_context
+                return
+    
+    def get_command(self, cmd: str) -> Command:
+        for command in self._commands:
+            if command.command == cmd:
+                return command
+        return None
