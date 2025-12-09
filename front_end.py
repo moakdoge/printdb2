@@ -14,5 +14,4 @@ def example_func(ctx: context.CommandContext, core: int):
 while True:
     content = input(">")
     cmd, args = tokenizer.tokenize_args(content)
-    print(argparser.type_check_args(manager.get_command(cmd), args))
-    manager.run(cmd, *args)
+    manager.run(cmd, args)

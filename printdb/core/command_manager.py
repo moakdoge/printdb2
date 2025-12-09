@@ -1,5 +1,6 @@
 from . import command, context
 from .command import Command,CommandDetails
+from printdb.parsing import argparser
 class CommandManager:
 
     def __init__(self):
@@ -17,11 +18,15 @@ class CommandManager:
             return func
         return decorator 
     
-    def run(self, cmd: str, *args):
+    def run(self, cmd: str, args):
         for command in self._commands:
             if command.command == cmd:
                 command_context = context.CommandContext(command)
-                command.run(command_context, *args)
+                args = argparser.type_check_args(command,args)
+                if args is not None:
+                    command.run(command_context, *args)
+                else:
+                    command.run(command_context, None)
                 del command_context
                 return
     
