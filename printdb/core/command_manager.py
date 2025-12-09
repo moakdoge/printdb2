@@ -32,6 +32,9 @@ class CommandManager:
         self._loaded_plugins.append(module)
         return module
     
+    def get_commands(self) -> list[Command]:
+        return self._commands
+    
     def load_plugin_folder(self, path: str):
         if not os.path.exists(path):
             raise OSError(f"Can't find plugin folder {path}!")

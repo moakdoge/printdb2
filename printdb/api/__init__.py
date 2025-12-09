@@ -7,4 +7,5 @@ from printdb.logging.sink import LogSink
 from printdb.core.command_manager import CommandManager
 from .operating_system import OSLib
 from pathlib import Path
+from printdb.core.args import Arg
 manager: CommandManager = CommandManager()

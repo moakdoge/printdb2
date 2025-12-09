@@ -1,0 +1,18 @@
+from printdb.api import *
+
+@manager.command("help", author="moakdoge")
+def help(ctx: CommandContext, command: str = ""):
+    if command == "":
+        for cmd in manager.get_commands():
+            des=  cmd.details.description if cmd.details.description is not None else "N/A"
+            aut = cmd.details.author if cmd.details.author is not None else "N/A" 
+            des = des.lstrip("\n")
+            args = cmd.details.args
+            pretty_args = []
+            for arg in args:
+                pretty_args.append(f"{arg.name}: [[yellow]]{arg.type.__name__}[[cyan]]{" [[green]](optional)[[cyan]]" if arg.optional else ""}")
+            ctx.pprint(f"\t[[bold]][[cyan]]{cmd.command}:[[reset]]")
+            ctx.pprint(f"\t\t[[red]][[bold]]Args:[[reset]][[cyan]] {", ".join(pretty_args)}")
+            ctx.pprint(f"\t\t[[red]][[bold]]Author:[[reset]][[cyan]] {aut}")
+            ctx.pprint(f"\t\t[[red]][[bold]]Description:[[reset]][[cyan]] {des}")
+            ctx.print("")
