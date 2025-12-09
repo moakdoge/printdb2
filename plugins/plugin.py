@@ -7,5 +7,8 @@ def example_func(ctx: CommandContext, core: int):
     return CommandOutput(ErrorCode.GENERIC_ERROR,output="Example test")
 
 @manager.command("cat", author="moakdoge")
-def cat(ctx: CommandContext, file: Path):
-    ctx.print(OSLib.read(str(file.absolute())))
+def cat(ctx: CommandContext, file: Path = None, content: str = ""): # type: ignore
+    if file is not None:
+        ctx.print(OSLib.read(file))
+    else:
+        ctx.print(content)
