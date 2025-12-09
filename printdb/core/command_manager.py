@@ -1,14 +1,17 @@
 import importlib.util
+from types import ModuleType
 from . import command, context, command_output
 from printdb.logging import traceback
 from .command_output import ErrorCode
 from .command import Command,CommandDetails
 from printdb.parsing import argparser
 from .exceptions import *
+import os
 class CommandManager:
 
     def __init__(self):
         self._commands: list[Command] = []
+        self._loaded_plugins: list[ModuleType] = []
         pass
 
     def register_command(self, command: Command):
@@ -26,8 +29,19 @@ class CommandManager:
         spec = importlib.util.spec_from_file_location("plugin_" + path, path)
         module = importlib.util.module_from_spec(spec) # type: ignore
         spec.loader.exec_module(module) # type: ignore
-
+        self._loaded_plugins.append(module)
         return module
+    
+    def load_plugin_folder(self, path: str):
+        if not os.path.exists(path):
+            raise OSError(f"Can't find plugin folder {path}!")
+            return
+        for dirpath, dirnames, filenames in os.walk(path):
+            for file in filenames:
+                if os.path.splitext(file)[1] == ".py":
+                    self.load_plugin(os.path.join(dirpath, file))
+
+
     def run(self, cmd: str, args) -> command_output.CommandOutput:
         for command in self._commands:
             if command.command == cmd:

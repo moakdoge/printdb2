@@ -1,6 +1,6 @@
 from printdb.api import manager, ErrorCode
 from printdb.api.frontend import tokenizer
-manager.load_plugin("/home/moakdoge/Desktop/printdb2-1/printdb/plugins/plugin.py")
+manager.load_plugin_folder("/home/moakdoge/Desktop/printdb2-1/plugins")
 
 while True:
     content = input(">")
