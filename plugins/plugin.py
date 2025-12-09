@@ -6,3 +6,6 @@ def example_func(ctx: CommandContext, core: int):
     ctx.print("by default has a newline but can be anything")
     return CommandOutput(ErrorCode.GENERIC_ERROR,output="Example test")
 
+@manager.command("cat", author="moakdoge")
+def cat(ctx: CommandContext, file: Path):
+    ctx.print(OSLib.read(str(file.absolute())))

@@ -5,4 +5,6 @@ from printdb.logging.colors import colorize
 from printdb.logging.prettyify import prettyify
 from printdb.logging.sink import LogSink
 from printdb.core.command_manager import CommandManager
+from .operating_system import OSLib
+from pathlib import Path
 manager: CommandManager = CommandManager()
