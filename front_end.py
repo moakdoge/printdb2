@@ -6,7 +6,8 @@ manager=command_manager.CommandManager()
 
 @manager.command("example_func", "moakdoge")
 def example_func(ctx: context.CommandContext, core: int):
-    ctx.pprint(f"Hello, world!. Core is: {core}")
+    ctx.pprint(f"[[red]]Example of prettified text / content. [[bold]]Isn't it pretty?[[reset]] [[reset]]")
+    ctx.print("by default has a newline but can be anything")
     pass
 
 
