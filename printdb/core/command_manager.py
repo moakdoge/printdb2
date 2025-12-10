@@ -12,7 +12,8 @@ class CommandManager:
     def __init__(self):
         self._commands: list[Command] = []
         self._loaded_plugins: list[ModuleType] = []
-        self._tasks: list = []
+        self._tasks: list[asyncio.Task] = []
+        self._fore = None
         pass
 
     def register_command(self, command: Command):
@@ -73,8 +74,22 @@ class CommandManager:
             self._tasks = [m for m in self._tasks if not m.done()]
         task.add_done_callback(on_task_finish)
 
-    async def _spawn(self, func):
-        await self._track_task(asyncio.create_task(func))
+    async def _spawn(self, func, foreground=False):
+        task = asyncio.create_task(func)
+        await self._track_task(task)
+        if foreground and self._fore is None:
+            self._fore = task
+
+    async def stop(self) -> bool:
+        if self._fore is not None:
+            self._fore.cancel()
+            self._fore = None
+            return True
+        return False
+        
+    async def stop_all(self):
+        for task in self._tasks:
+            task.cancel()
 
     async def _run(self, cmd: str, args, redirect_file = None, redirect_mode = None, input=None, mask_input = False, background=False) -> command_output.CommandOutput:
         '''
