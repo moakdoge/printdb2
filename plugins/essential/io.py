@@ -6,10 +6,28 @@ async def cat(ctx: CommandContext, file: Path = None, content: str = ""): # type
         Reads out the contents of a file / string to print.
     '''
     if file is not None:
-        ctx.print(OSLib.read(file))
+        await ctx.print(OSLib.read(file))
     else:
-        ctx.print(content)
+        await ctx.print(content)
 
+
+@manager.command("output", author="moakdoge")
+async def output(ctx: CommandContext):
+    '''Echos back anything being sent to the pipe'''
+    last_log = ""
+    while True:
+        o = await ctx.input.read()
+        await ctx.pprint(o)
+        if o != last_log:
+            last_log = o
+        await delay(0.25)
+
+@manager.command("yes", author="moakdoge")
+async def yes(ctx:CommandContext):
+    '''Constantly sends a stream of yesses until killed'''
+    while True:
+        await ctx.output.write("y")
+        await delay(0.01)
 
 @manager.command("echo",author="moakdoge")
 async def echo(ctx: CommandContext, *args: str):
@@ -18,6 +36,6 @@ async def echo(ctx: CommandContext, *args: str):
     '''
     if len(args) < 1:
         if ctx.input.read() != "":
-            ctx.pprint(ctx.input.read())
+            await ctx.pprint(ctx.input.read())
             return CommandOutput(ErrorCode.SUCCESS, "Logged input")
-    ctx.pprint(" ".join(args))
+    await ctx.pprint(" ".join(args))

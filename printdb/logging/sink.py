@@ -1,29 +1,42 @@
+import asyncio
 import os
 
 
 class LogSink:
-    def __init__(self, masked = False):
-        self.logs = []
-        self._is_redirecting = False
+    def __init__(self, terminal=False):
+        self._queue = asyncio.Queue()
+        self._closed = False
+
         self._file = None
-        self._masked = masked
-        pass
-    def redirect_file(self, file: str, append: bool = False):
-        if os.path.exists(file) or not append:
-            self._is_redirecting = True
-            self._file = open(file, "w" if not append else "a")
-    
-    def __add__(self, other):
-        self.logs.append(other)
-        if self._is_redirecting:
-            self._file.write(other)
+        self._terminal = terminal  # TerminalSink or None
+
+    # ----------------------------
+    #   Write to pipe
+    # ----------------------------
+    async def write(self, data: str):
+        if self._closed:
+            return
+        
+        await self._queue.put(data)
+
+        if self._file is not None:
+            self._file.write(data)
             self._file.flush()
-        if not self._masked and not self._is_redirecting:
-            print(other,end="")
-        return self
-    
-    def __iadd__(self,other):
-        return self.__add__(other)
-    
-    def read(self):
-        return "".join(self.logs)
+
+        if self._terminal:
+            print(data,end="")
+
+
+    async def read(self) -> str:
+        if self._closed and self._queue.empty():
+            return ""
+        return await self._queue.get()
+
+
+    def redirect_file(self, path: str, append=False):
+        mode = "a" if append else "w"
+        self._file = open(path, mode)
+
+    def close(self):
+        self._closed = True
+        self._queue.put_nowait("")  # unblock waiting consumers

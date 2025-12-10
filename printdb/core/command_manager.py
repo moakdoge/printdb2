@@ -1,5 +1,7 @@
 import importlib.util
 from types import ModuleType
+
+import printdb
 from . import command, context, command_output
 from printdb.logging import traceback
 from .command_output import ErrorCode
@@ -51,7 +53,7 @@ class CommandManager:
                     self.load_plugin(os.path.join(dirpath, file))
 
 
-    async def run(self, cmd: str) -> command_output.CommandOutput:
+    async def run(self, cmd: str) -> CommandTask | None:
         #tokenize into pipes and redirects
         self._command_history.append(cmd)
         newcmd,mode,file = tokenizer.tokensize_redirects(cmd)
@@ -59,18 +61,27 @@ class CommandManager:
         bg= False
         if cmd.endswith("&"):
             bg = True
-        out = command_output.CommandOutput(ErrorCode.SUCCESS, "", "")
+        out = None
         m = len(pipes) - 1
+        other_tasks = []
         for i, cmd in enumerate(pipes):
             is_at_end = (i >= m)
-
+            if out is None:
+                d = None
+            else:
+                d=out.ctx.output
+                other_tasks.append(out)
             if mode is not None and file is not None:
                 c, args = tokenizer.tokenize_args(newcmd)
-                out= await self._run(c, args, redirect_file=file, redirect_mode=mode, input=out.log, mask_input=not is_at_end, background=bg)
+                out= await self._run(c, args, redirect_file=file, redirect_mode=mode, input=d, mask_input=not is_at_end, background=bg)
             else:
                 c, args = tokenizer.tokenize_args(cmd)
-                out= await self._run(c, args, input=out.log,mask_input=not is_at_end, background=bg)
-        return out
+                out= await self._run(c, args, input=d,mask_input=not is_at_end, background=bg)
+        if isinstance(out, CommandTask):
+            for tk in other_tasks:
+                out.link_task(tk)
+            return out
+        return None
 
 
     async def _track_task(self, task: CommandTask):
@@ -85,6 +96,7 @@ class CommandManager:
         if foreground and self._fore is None:
             self._fore = new_task
             await new_task.task
+        return new_task
 
     async def stop(self) -> bool:
         if self._fore is not None:
@@ -99,7 +111,7 @@ class CommandManager:
         for task in self._tasks:
             task.task.cancel()
 
-    async def _run(self, cmd: str, args, redirect_file = None, redirect_mode = None, input=None, mask_input = False, background=False) -> command_output.CommandOutput:
+    async def _run(self, cmd: str, args, redirect_file = None, redirect_mode = None, input=None, mask_input = False, background=False) -> CommandTask | None:
         '''
             DO NOT CALL! call the normal run instead, unless you are a plugin trying to run a command manually.
         '''
@@ -109,40 +121,37 @@ class CommandManager:
                 try:
                     args = argparser.type_check_args(command,args)
                 except InvalidParamType as e:
-                    return command_output.CommandOutput(ErrorCode.INVALID_PARAM_TYPE, output=str(e))
+                    return None
                 except MissingParam as e:
-                    return command_output.CommandOutput(ErrorCode.MISSING_PARAM, output=str(e))
+                    return None
 
 
                 if redirect_file is not None and redirect_mode is not None:
                     if redirect_mode == "a" and not os.path.exists(redirect_file):
-                        return command_output.CommandOutput(ErrorCode.FILE_NOT_FOUND, output=f"Redirect file of '{redirect_file}' does not exist and you are in append mode!")
+                        return None #command_output.CommandOutput(ErrorCode.FILE_NOT_FOUND, output=f"Redirect file of '{redirect_file}' does not exist and you are in append mode!")
                     command_context.output.redirect_file(redirect_file, append=True if redirect_mode == "a" else False)
                 try:
-                    command_context.input._masked = True
-                    command_context.output._masked = mask_input
                     args = args or ()
+                    command_context.input._terminal = True
+                    command_context.output._terminal = not mask_input
                     if input is not None:
-                        command_context.input+= input
+                        import printdb.logging.sink as snk
+                        print(type(input))
+                        if isinstance(input, snk.LogSink):
+                            command_context.input=input
+                        else:
+                            command_context.input+= input
                     
                         # Normalize args
 
                         if background:
-                            await self._spawn(command, command_context, foreground=False, args=args)
                             print(f"[{len(self._tasks)} / inf]: {cmd}")
-                            return command_output.CommandOutput(
-                                ErrorCode.SUCCESS,
-                                f"Started thread [{len(self._tasks)}]"
-                            )
+                            return await self._spawn(command, command_context, foreground=False, args=args)
 
-
-                        await self._spawn(command, command_context, True, args) # type: ignore
-
-                        return command_output.CommandOutput(ErrorCode.SUCCESS, log=command_context.output.read())
-
+                    return await self._spawn(command, command_context, True, args)
                 except Exception as e:
                     print(traceback.trace_error(e))
-        return command_output.CommandOutput(ErrorCode.COMMAND_NOT_FOUND, output="Command not found")
+        return None
     
     def get_command(self, cmd: str) -> Command | None:
         for command in self._commands:

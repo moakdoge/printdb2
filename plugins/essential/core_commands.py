@@ -17,11 +17,11 @@ async def help(ctx: CommandContext, command: str = ""):
             pretty_args = []
             for arg in args:
                 pretty_args.append(f"{arg.name}: [[yellow]]{arg.type.__name__}[[cyan]]{" [[green]](optional)[[cyan]]" if arg.optional else ""}")
-            ctx.pprint(f"\t[[bold]][[cyan]]{cmd.command}:[[reset]]")
-            ctx.pprint(f"\t\t[[red]][[bold]]Args:[[reset]][[cyan]] {", ".join(pretty_args)}")
-            ctx.pprint(f"\t\t[[red]][[bold]]Author:[[reset]][[cyan]] {aut}")
-            ctx.pprint(f"\t\t[[red]][[bold]]Description:[[reset]][[cyan]] {des}")
-            ctx.print("")
+            await  ctx.pprint(f"\t[[bold]][[cyan]]{cmd.command}:[[reset]]")
+            await ctx.pprint(f"\t\t[[red]][[bold]]Args:[[reset]][[cyan]] {", ".join(pretty_args)}")
+            await ctx.pprint(f"\t\t[[red]][[bold]]Author:[[reset]][[cyan]] {aut}")
+            await ctx.pprint(f"\t\t[[red]][[bold]]Description:[[reset]][[cyan]] {des}")
+            await  ctx.print("")
 
 
 @manager.command("wait", author="moakdoge")
@@ -46,14 +46,16 @@ async def control_tasks(ctx: CommandContext, mode: str = "list", target: str = "
     target: all OR a specific proccess ID
     '''
     allowed_modes = ["list", "stop", "info"]
+    await ctx.pprint("")
     if mode.lower() not in allowed_modes:
-        ctx.pprint("[[red]]Please choose one of the following: list/stop/info")
+        await ctx.pprint("[[red]]Please choose one of the following: list/stop/info")
         return CommandOutput(ErrorCode.GENERIC_ERROR, "Invalid mode")
     if mode == "list":
         for i, task in enumerate(manager._tasks):
             lines = [
-                f"[[red]][[bold]]{task.get_name()} (PID: {i}) :[[reset]]",
-                f"\t[[red]]Complete:[[cyan]] {task.done()}[[reset]]",
-                f"\t[[red]]Command:[[cyan]] {task.get_stack()}"
+                f"[[red]][[bold]]{task.task.get_name()} (PID: {i}) :[[reset]]",
+                f"\t[[red]]Complete:[[cyan]]{task.complete}[[reset]]",
+                f"\t[[red]]Command:[[cyan]]{task.command.command}[[reset]]",
+                f"\t[[red]]Runtime:[[cyan]]{task.runtime}[[reset]]"
             ]
-            ctx.pprint("\n".join(lines))
+            await ctx.pprint("\n".join(lines))
