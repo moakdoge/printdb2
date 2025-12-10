@@ -92,8 +92,34 @@ async def input(prompt: str):
     stdout.flush()
     old_len = 0
     display = ""
-    while True:
+
+    async def get_character(): #only used to combine the arrow keys lol
         char = await raw_getch()
+        if char == "\x1b":
+            new = char
+            part2 = await raw_getch()
+            if part2 == "[":
+                letter = await raw_getch()
+                if letter in ("A", "B", "C", "D"):
+                    return new + part2 + letter
+        return char
+    while True:
+        char = await get_character()
+
+        if char == "\x1b[A": #UP
+            pass
+        if char == "\x1b[B": #DOWN
+            pass
+        if char == "\x1b[C": #RIGHT
+            cursor += 1
+            if cursor > len(typed):
+                cursor = len(typed)
+            char = ""
+        if char == "\x1b[D": #LEFT:
+            cursor -=1 
+            if cursor < 0:
+                cursor = 0
+            char = ""
         # ENTER
         if char in ("\r", "\n"):
             stdout.write("\r" + prompt + display + "\x1b[K")
