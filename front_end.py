@@ -21,7 +21,8 @@ def autofill_func(st):
 
 autofill_rules = [
     AutofillRule.regex(r'(?<!")\b\d+(?:\.\d+)?\b(?!")(?=(?:[^"]*"[^"]*")*[^"]*$)', "[[red]]%s[[reset]]",at_end=False),
-    AutofillRule(on_char=autofill_func)
+    AutofillRule(on_char=autofill_func),
+    AutofillRule.replace("help", "nada")
 ]
 ON_INPUT= False
 async def main():

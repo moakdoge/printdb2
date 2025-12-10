@@ -85,9 +85,10 @@ async def input(prompt: str) -> str:
 '''
 
 class AutofillRule():
-    def __init__(self, on_send=None, on_char=None):
+    def __init__(self, on_send=None, on_char=None, text_replacement=False):
         self.on_send = on_send
         self.on_char = on_char
+        self.text_replacement = text_replacement
 
     @classmethod
     def regex(cls, regex: str, replacement: str, at_end=False):
@@ -100,6 +101,12 @@ class AutofillRule():
             return AutofillRule(on_send=replace_regex)
         else:
             return AutofillRule(on_char=replace_regex)
+    
+    @classmethod
+    def replace(cls, rep: str, replacement: str):
+        def re(inp: str):
+            return inp.replace(rep, replacement)
+        return AutofillRule(on_char=re, text_replacement=True)
 
 
 async def input(prompt: str, history: list[str] | None = None, rules: list[AutofillRule] | None = None):
@@ -116,6 +123,7 @@ async def input(prompt: str, history: list[str] | None = None, rules: list[Autof
     display = ""
     history = [h for h in history if h.strip() != ""]
     ind = len(history)
+    
 
     async def get_character(): #only used to combine the arrow keys lol
         char = await raw_getch()
@@ -129,7 +137,9 @@ async def input(prompt: str, history: list[str] | None = None, rules: list[Autof
         return char
     while True:
         char = await get_character()
-
+        for rule in rules:
+            if rule.text_replacement and rule.on_char is not None:
+                typed = rule.on_char(typed)
         if char == "\x1b[A": #UP
             ind -= 1
             if ind < 0:
