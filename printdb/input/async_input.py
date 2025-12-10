@@ -3,6 +3,7 @@ import sys
 from printdb.logging.colors import *
 from printdb.parsing.tokenizer import *
 import printdb.api as api
+from sys import stdout
 
 
 if sys.platform == "win32":
@@ -29,6 +30,8 @@ else:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, _blocking_linux_getch)
 
+
+'''
 async def input(prompt: str) -> str:
     st = ""
     cursor = -1
@@ -37,12 +40,12 @@ async def input(prompt: str) -> str:
         cmd, args = tokenize_args(st)
         if len(st) > 1:
             print("\b" * (len(st)-1), end="")
+        raw = st
+        raw = raw[:cursor] + "[[inverse]]" + raw[cursor] + "[[reset]][[red]]" + raw[cursor+1:]
         if api.manager.get_command(cmd):
-            raw = st.replace(cmd, f"[[green]]{cmd}[[red]]")
+            raw = raw.replace(cmd, f"[[green]]{cmd}[[red]]")
         else:
-            raw = st
-        cursor = len(st) -1
-       # raw = raw[:cursor] + "[[inverse]]" + raw[cursor] + "[[reset]][[red]]" + raw[cursor+1:]
+            pass
         print(colorize(f"[[red]]{raw}[[reset]]"), end="", flush=True)
     print(prompt,end="",flush=True)
     while True:
@@ -58,6 +61,7 @@ async def input(prompt: str) -> str:
         if ch in ("\x08", "\x7f"): #backspace
             if st:
                 st = st[:-1]
+                cursor-=1
                 print("\b \b", end="", flush=True)
             continue
         if ch == "\x1b[A": #up
@@ -67,8 +71,8 @@ async def input(prompt: str) -> str:
         
         if ch == "\x1b[C": #right
             cursor+= 1
-            if cursor > len(ch):
-                cursor = len(ch)
+            if cursor > len(st):
+                cursor = len(st)
             continue
         if ch == "\x1b[D": #left
             cursor-= 1
@@ -78,3 +82,44 @@ async def input(prompt: str) -> str:
         st += ch
         cursor += len(ch)
         log()
+'''
+
+async def input(prompt: str):
+    typed = ""
+    cursor = 0
+    stdout.write("\x1b[?25l")  # hide cursor
+    stdout.write("\r" + prompt)
+    stdout.flush()
+    while True:
+        char = await raw_getch()
+
+        # ENTER
+        if char in ("\r", "\n"):
+            stdout.write("\x1b[?25h\n")  # show cursor and newline
+            stdout.flush()
+            return typed
+
+        # BACKSPACE
+        if char in ("\x08", "\x7f"):
+            if cursor > 0:
+                typed = typed[:cursor-1] + typed[cursor:]
+                cursor -= 1
+
+        # INSERT NORMAL CHAR
+        else:
+            typed = typed[:cursor] + char + typed[cursor:]
+            cursor += len(char)
+
+        # RENDER FRAME
+        
+        display = (
+            typed[:cursor] +
+            "[[inverse]]" +
+            (typed[cursor] if cursor < len(typed) else " ") +
+            "[[reset]]" +
+            typed[cursor + (1 if cursor < len(typed) else 0):]
+        )
+
+
+        stdout.write("\r" + prompt + colorize(display))
+        stdout.flush()
