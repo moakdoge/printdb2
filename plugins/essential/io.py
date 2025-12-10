@@ -17,17 +17,13 @@ async def output(ctx: CommandContext):
     last_log = ""
     while True:
         o = await ctx.input.read()
-        await ctx.pprint(o)
-        if o != last_log:
-            last_log = o
-        await delay(0.25)
-
+        print(o)
 @manager.command("yes", author="moakdoge")
 async def yes(ctx:CommandContext):
     '''Constantly sends a stream of yesses until killed'''
     while True:
         await ctx.output.write("y")
-        await delay(0.01)
+        await delay(0.1)
 
 @manager.command("echo",author="moakdoge")
 async def echo(ctx: CommandContext, *args: str):

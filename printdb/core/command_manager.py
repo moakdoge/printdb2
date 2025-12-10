@@ -79,10 +79,12 @@ class CommandManager:
                 out= await self._run(c, args, input=d,mask_input=not is_at_end, background=bg)
         last_inp = None
         if isinstance(out, CommandTask):
+            out.ctx.output._terminal = False
             for tk in other_tasks:
                 out.link_task(tk)
-                out.ctx.output = last_inp
-                last_inp = out.ctx.input
+                tk.ctx.input = last_inp
+                last_inp = tk.ctx.output
+            out.ctx.input= last_inp
             return out
         return None
 
@@ -91,8 +93,10 @@ class CommandManager:
         self._tasks.append(task)
         def on_task_finish(t):
             self._tasks = [m for m in self._tasks if not m.task.done()]
-            task.ctx.output.close()
-            task.ctx.input.close()
+            if task.ctx.output is not None:
+                task.ctx.output.close()
+            if task.ctx.input is not None:
+                task.ctx.input.close()
         task.task.add_done_callback(on_task_finish)
 
     async def _spawn(self, cmd: Command, cont: context.CommandContext, foreground=False, args: tuple = ()):

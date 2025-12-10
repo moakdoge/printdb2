@@ -14,9 +14,7 @@ class LogSink:
     #   Write to pipe
     # ----------------------------
     async def write(self, data: str):
-        if self._closed:
-            return
-        
+
         await self._queue.put(data)
 
         if self._file is not None:
