@@ -45,7 +45,7 @@ class CommandManager:
                     self.load_plugin(os.path.join(dirpath, file))
 
 
-    def run(self, cmd: str) -> command_output.CommandOutput:
+    async def run(self, cmd: str) -> command_output.CommandOutput:
         #tokenize into pipes and redirects
         newcmd,mode,file = tokenizer.tokensize_redirects(cmd)
         pipes = tokenizer.tokenize_pipes(cmd)
@@ -57,10 +57,10 @@ class CommandManager:
 
             if mode is not None and file is not None:
                 c, args = tokenizer.tokenize_args(newcmd)
-                out= asyncio.run(self._run(c, args, redirect_file=file, redirect_mode=mode, input=out.log, mask_input=not is_at_end))
+                out= await self._run(c, args, redirect_file=file, redirect_mode=mode, input=out.log, mask_input=not is_at_end)
             else:
                 c, args = tokenizer.tokenize_args(cmd)
-                out= asyncio.run(self._run(c, args, input=out.log,mask_input=not is_at_end))
+                out= await self._run(c, args, input=out.log,mask_input=not is_at_end)
         return out
 
 
