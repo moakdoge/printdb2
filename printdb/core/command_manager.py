@@ -13,6 +13,7 @@ class CommandManager:
         self._commands: list[Command] = []
         self._loaded_plugins: list[ModuleType] = []
         self._tasks: list[asyncio.Task] = []
+        self._command_history: list[str] = []
         self._fore = None
         pass
 
@@ -49,6 +50,7 @@ class CommandManager:
 
     async def run(self, cmd: str) -> command_output.CommandOutput:
         #tokenize into pipes and redirects
+        self._command_history.append(cmd)
         newcmd,mode,file = tokenizer.tokensize_redirects(cmd)
         pipes = tokenizer.tokenize_pipes(cmd)
         bg= False

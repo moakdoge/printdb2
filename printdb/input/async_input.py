@@ -84,7 +84,9 @@ async def input(prompt: str) -> str:
         log()
 '''
 
-async def input(prompt: str):
+async def input(prompt: str, history: list[str] | None = None):
+    if history == None:
+        history = []
     typed = ""
     cursor = 0
     stdout.write("\x1b[?25l")  # hide cursor
@@ -92,6 +94,8 @@ async def input(prompt: str):
     stdout.flush()
     old_len = 0
     display = ""
+    history = [h for h in history if h.strip() != ""]
+    ind = len(history)
 
     async def get_character(): #only used to combine the arrow keys lol
         char = await raw_getch()
@@ -107,9 +111,24 @@ async def input(prompt: str):
         char = await get_character()
 
         if char == "\x1b[A": #UP
-            pass
+            ind -= 1
+            if ind < 0:
+                ind = 0
+            typed = history[ind]
+            char = ""
         if char == "\x1b[B": #DOWN
-            pass
+            ind += 1
+            if ind > len(history):
+                ind = len(history)
+            if ind == len(history):
+                typed = ""        # blank line after last history item
+            else:
+                typed = history[ind]
+            char = ""
+
+        if cursor > len(typed):
+            cursor = len(typed)
+
         if char == "\x1b[C": #RIGHT
             cursor += 1
             if cursor > len(typed):

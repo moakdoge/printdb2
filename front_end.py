@@ -20,7 +20,7 @@ async def main():
     while True:
         if True:
             ON_INPUT = True
-            content = await input(input_prompt.input_prompt())
+            content = await input(input_prompt.input_prompt(), history=manager._command_history)
             ON_INPUT = False
             await manager.run(content)
 
