@@ -32,5 +32,28 @@ async def wait(ctx: CommandContext, seconds: float):
     await delay(seconds)
 
 @manager.command("exit", author="moakdoge")
-async def exi_t(ctx: CommandContext):
-    sys.exit(1)
+async def exi_t(ctx: CommandContext, exit_code: int = 1):
+    '''
+    Immediately exits using the exit code provided.
+    '''
+    sys.exit(exit_code)
+
+@manager.command("task", author="moakdoge")
+async def control_tasks(ctx: CommandContext, mode: str = "list", target: str = "all"):
+    '''
+    Allows you to manage tasks.
+    mode: must be list/stop/info
+    target: all OR a specific proccess ID
+    '''
+    allowed_modes = ["list", "stop", "info"]
+    if mode.lower() not in allowed_modes:
+        ctx.pprint("[[red]]Please choose one of the following: list/stop/info")
+        return CommandOutput(ErrorCode.GENERIC_ERROR, "Invalid mode")
+    if mode == "list":
+        for i, task in enumerate(manager._tasks):
+            lines = [
+                f"[[red]][[bold]]{task.get_name()} (PID: {i}) :[[reset]]",
+                f"\t[[red]]Complete:[[cyan]] {task.done()}[[reset]]",
+                f"\t[[red]]Command:[[cyan]] {task.get_stack()}"
+            ]
+            ctx.pprint("\n".join(lines))

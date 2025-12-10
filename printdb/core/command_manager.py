@@ -4,6 +4,7 @@ from . import command, context, command_output
 from printdb.logging import traceback
 from .command_output import ErrorCode
 from .command import Command,CommandDetails
+from .command_task import CommandTask
 from printdb.parsing import argparser, tokenizer
 from .exceptions import *
 import os, asyncio
@@ -12,7 +13,7 @@ class CommandManager:
     def __init__(self):
         self._commands: list[Command] = []
         self._loaded_plugins: list[ModuleType] = []
-        self._tasks: list[asyncio.Task] = []
+        self._tasks: list[CommandTask] = []
         self._command_history: list[str] = []
         self._fore = None
         pass
@@ -72,21 +73,22 @@ class CommandManager:
         return out
 
 
-    async def _track_task(self, task: asyncio.Task):
+    async def _track_task(self, task: CommandTask):
         self._tasks.append(task)
         def on_task_finish(t):
-            self._tasks = [m for m in self._tasks if not m.done()]
-        task.add_done_callback(on_task_finish)
+            self._tasks = [m for m in self._tasks if not m.task.done()]
+        task.task.add_done_callback(on_task_finish)
 
-    async def _spawn(self, func, foreground=False):
-        task = asyncio.create_task(func)
-        await self._track_task(task)
+    async def _spawn(self, cmd: Command, cont: context.CommandContext, foreground=False, args: tuple = ()):
+        new_task = CommandTask(cmd, cont, asyncio.create_task(cmd.func(cont, *args)))
+        await self._track_task(new_task)
         if foreground and self._fore is None:
-            self._fore = task
+            self._fore = new_task
+            await new_task.task
 
     async def stop(self) -> bool:
         if self._fore is not None:
-            self._fore.cancel()
+            self._fore.task.cancel()
             self._fore = None
             return True
         else:
@@ -95,7 +97,7 @@ class CommandManager:
         
     async def stop_all(self):
         for task in self._tasks:
-            task.cancel()
+            task.task.cancel()
 
     async def _run(self, cmd: str, args, redirect_file = None, redirect_mode = None, input=None, mask_input = False, background=False) -> command_output.CommandOutput:
         '''
@@ -119,15 +121,14 @@ class CommandManager:
                 try:
                     command_context.input._masked = True
                     command_context.output._masked = mask_input
-
+                    args = args or ()
                     if input is not None:
                         command_context.input+= input
                     
                         # Normalize args
-                        args = args or ()
 
                         if background:
-                            await self._spawn(command.run(command_context, *args), foreground=False)
+                            await self._spawn(command, command_context, foreground=False, args=args)
                             print(f"[{len(self._tasks)} / inf]: {cmd}")
                             return command_output.CommandOutput(
                                 ErrorCode.SUCCESS,
@@ -135,16 +136,10 @@ class CommandManager:
                             )
 
 
-                        self._fore = asyncio.create_task(command.run(command_context, *args))
-                        return_value = await self._fore
+                        await self._spawn(command, command_context, True, args) # type: ignore
 
-
-
-                    if not isinstance(return_value, command_output.CommandOutput):
                         return command_output.CommandOutput(ErrorCode.SUCCESS, log=command_context.output.read())
-                    else:
-                        return_value.log = command_context.output.read()
-                        return return_value
+
                 except Exception as e:
                     print(traceback.trace_error(e))
         return command_output.CommandOutput(ErrorCode.COMMAND_NOT_FOUND, output="Command not found")
