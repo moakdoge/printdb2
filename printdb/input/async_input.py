@@ -42,7 +42,7 @@ async def input(prompt: str) -> str:
         else:
             raw = st
         cursor = len(st) -1
-        raw = raw[:cursor] + "[[inverse]]" + raw[cursor] + "[[reset]][[red]]" + raw[cursor+1:]
+       # raw = raw[:cursor] + "[[inverse]]" + raw[cursor] + "[[reset]][[red]]" + raw[cursor+1:]
         print(colorize(f"[[red]]{raw}[[reset]]"), end="", flush=True)
     print(prompt,end="",flush=True)
     while True:
@@ -60,7 +60,21 @@ async def input(prompt: str) -> str:
                 st = st[:-1]
                 print("\b \b", end="", flush=True)
             continue
-
+        if ch == "\x1b[A": #up
+            pass
+        elif ch == "\x1b[B": #down
+            pass
+        
+        if ch == "\x1b[C": #right
+            cursor+= 1
+            if cursor > len(ch):
+                cursor = len(ch)
+            continue
+        if ch == "\x1b[D": #left
+            cursor-= 1
+            if cursor < 0:
+                cursor = 0
+            continue
         st += ch
         cursor += len(ch)
         log()

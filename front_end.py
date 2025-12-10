@@ -5,7 +5,13 @@ from aioconsole import ainput
 from printdb.input.async_input import input
 import sys
 
-manager.load_plugin_folder(f"{os.path.join(os.path.split(__file__)[0], "plugins")}")
+def resource_path(rel_path: str) -> str:
+    if hasattr(sys, '_MEIPASS'):  
+        base = sys._MEIPASS
+    else:
+        base = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base, rel_path)
+manager.load_plugin_folder(f"{resource_path("plugins")}")
 
 ON_INPUT= False
 async def main():
