@@ -11,6 +11,7 @@ def colorize(text: str) -> str:
         "cyan": "\033[36m",
         "white": "\033[37m",
         "bold": "\033[1m",
+        "inverse": "\x1b[7m"
     }
     def replace_tag(match):
         tag = match.group(1)

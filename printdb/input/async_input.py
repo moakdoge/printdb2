@@ -31,8 +31,9 @@ else:
 
 async def input(prompt: str) -> str:
     st = ""
+    cursor = -1
     def log():
-        nonlocal st
+        nonlocal st, cursor
         cmd, args = tokenize_args(st)
         if len(st) > 1:
             print("\b" * (len(st)-1), end="")
@@ -40,6 +41,8 @@ async def input(prompt: str) -> str:
             raw = st.replace(cmd, f"[[green]]{cmd}[[red]]")
         else:
             raw = st
+        cursor = len(st) -1
+        raw = raw[:cursor] + "[[inverse]]" + raw[cursor] + "[[reset]][[red]]" + raw[cursor+1:]
         print(colorize(f"[[red]]{raw}[[reset]]"), end="", flush=True)
     print(prompt,end="",flush=True)
     while True:
@@ -59,4 +62,5 @@ async def input(prompt: str) -> str:
             continue
 
         st += ch
+        cursor += len(ch)
         log()
