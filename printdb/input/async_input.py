@@ -90,14 +90,16 @@ async def input(prompt: str):
     stdout.write("\x1b[?25l")  # hide cursor
     stdout.write("\r" + prompt)
     stdout.flush()
+    old_len = 0
+    display = ""
     while True:
         char = await raw_getch()
-
         # ENTER
         if char in ("\r", "\n"):
+            stdout.write("\r" + prompt + display + "\x1b[K")
             stdout.write("\x1b[?25h\n")  # show cursor and newline
             stdout.flush()
-            return typed
+            break
 
         # BACKSPACE
         if char in ("\x08", "\x7f"):
@@ -111,15 +113,22 @@ async def input(prompt: str):
             cursor += len(char)
 
         # RENDER FRAME
-        
+
         display = (
-            typed[:cursor] +
-            "[[inverse]]" +
-            (typed[cursor] if cursor < len(typed) else " ") +
-            "[[reset]]" +
+            typed[:cursor] +(typed[cursor] if cursor < len(typed) else " ")+
             typed[cursor + (1 if cursor < len(typed) else 0):]
         )
+        new_disp = ""
+        for index, l in enumerate(display):
+            if index == cursor:
+                new_disp+=f"[[inverse]]{l}[[reset]]"
+            else:
+                new_disp+=l
+            
 
-
-        stdout.write("\r" + prompt + colorize(display))
+        out = prompt + colorize(new_disp)
+        stdout.write("\r" + out + "\x1b[K")
+        old_len = len(out)
         stdout.flush()
+    return typed
+
