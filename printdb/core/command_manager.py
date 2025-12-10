@@ -85,6 +85,8 @@ class CommandManager:
             self._fore.cancel()
             self._fore = None
             return True
+        else:
+            await self.stop_all()
         return False
         
     async def stop_all(self):
@@ -121,15 +123,18 @@ class CommandManager:
                         args = args or ()
 
                         if background:
-                            await self._spawn(command.run(command_context, *args))
+                            await self._spawn(command.run(command_context, *args), foreground=False)
                             print(f"[{len(self._tasks)} / inf]: {cmd}")
                             return command_output.CommandOutput(
                                 ErrorCode.SUCCESS,
                                 f"Started thread [{len(self._tasks)}]"
                             )
 
-                        # Foreground
-                        return_value = await command.run(command_context, *args)
+
+                        self._fore = asyncio.create_task(command.run(command_context, *args))
+                        return_value = await self._fore
+
+
 
                     if not isinstance(return_value, command_output.CommandOutput):
                         return command_output.CommandOutput(ErrorCode.SUCCESS, log=command_context.output.read())

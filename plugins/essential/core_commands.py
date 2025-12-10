@@ -1,5 +1,5 @@
 from printdb.api import *
-
+import sys
 @manager.command("help", author="moakdoge")
 async def help(ctx: CommandContext, command: str = ""):
     '''
@@ -30,3 +30,7 @@ async def wait(ctx: CommandContext, seconds: float):
     Waits a certain amount of seconds.
     '''
     await delay(seconds)
+
+@manager.command("exit", author="moakdoge")
+async def exi_t(ctx: CommandContext):
+    sys.exit(1)

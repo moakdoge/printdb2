@@ -33,7 +33,10 @@ class Command:
             self.details.args.append(Arg(name, param.annotation, defu, opt))
 
     async def run(self, context: context.CommandContext, *args):
-        await self.func(context, *args)
+        try:
+            await self.func(context, *args)
+        except KeyboardInterrupt:
+            return
 
     #little bits of helper shit
     def __repr__(self):
