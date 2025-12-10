@@ -13,6 +13,9 @@ def cat(ctx: CommandContext, file: Path = None, content: str = ""): # type: igno
 
 @manager.command("echo",author="moakdoge")
 def echo(ctx: CommandContext, *args: str):
+    '''
+        Repeats any file, argument, or pipe input passed in.
+    '''
     if len(args) < 1:
         if ctx.input.read() != "":
             ctx.pprint(ctx.input.read())

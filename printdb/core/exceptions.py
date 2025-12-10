@@ -9,3 +9,6 @@ class InvalidReturnType(Exception):
 
 class InvalidRedirect(Exception):
     pass
+
+class ThreadingLimitReached(Exception):
+    pass
