@@ -1,9 +1,9 @@
 from typing import Any
 from printdb.logging import sink, prettyify
 class CommandContext:
-    def __init__(self, command: str):
+    def __init__(self, command: str, inp: sink.LogSink | None =None):
         self.output = sink.LogSink()
-        self.input = sink.LogSink()
+        self.input = inp if inp is not None else sink.LogSink()
         pass
     async def pprint(self, content: Any):
         await self.output.write(f"{prettyify.prettyify(content)}\n")

@@ -77,9 +77,12 @@ class CommandManager:
             else:
                 c, args = tokenizer.tokenize_args(cmd)
                 out= await self._run(c, args, input=d,mask_input=not is_at_end, background=bg)
+        last_inp = None
         if isinstance(out, CommandTask):
             for tk in other_tasks:
                 out.link_task(tk)
+                out.ctx.output = last_inp
+                last_inp = out.ctx.input
             return out
         return None
 
@@ -88,6 +91,8 @@ class CommandManager:
         self._tasks.append(task)
         def on_task_finish(t):
             self._tasks = [m for m in self._tasks if not m.task.done()]
+            task.ctx.output.close()
+            task.ctx.input.close()
         task.task.add_done_callback(on_task_finish)
 
     async def _spawn(self, cmd: Command, cont: context.CommandContext, foreground=False, args: tuple = ()):
@@ -117,7 +122,7 @@ class CommandManager:
         '''
         for command in self._commands:
             if command.command == cmd:
-                command_context:context.CommandContext = context.CommandContext(cmd)
+                command_context:context.CommandContext = context.CommandContext(cmd, inp=input)
                 try:
                     args = argparser.type_check_args(command,args)
                 except InvalidParamType as e:
@@ -137,10 +142,8 @@ class CommandManager:
                     if input is not None:
                         import printdb.logging.sink as snk
                         print(type(input))
-                        if isinstance(input, snk.LogSink):
-                            command_context.input=input
-                        else:
-                            command_context.input+= input
+                        if not isinstance(input, snk.LogSink):
+                            await command_context.input.write(input)
                     
                         # Normalize args
 
