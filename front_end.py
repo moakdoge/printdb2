@@ -7,7 +7,7 @@ import sys
 
 def resource_path(rel_path: str) -> str:
     if hasattr(sys, '_MEIPASS'):  
-        base = sys._MEIPASS
+        base = sys._MEIPASS  # type: ignore
     else:
         base = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base, rel_path)
@@ -19,10 +19,28 @@ def autofill_func(st):
         st = st.replace(cmd.command, f"[[green]]{cmd.command}[[reset]]")
     return st
 
+def autofill(st):
+    # Only autofill the *first* token
+    if " " in st:
+        return st  # stop autofill once args start
+
+    for cmd in manager.get_commands():
+        full = cmd.command
+
+        # generate prefixes: h, he, hel, help
+        for i in range(1, len(full)):
+            prefix = full[:i]
+
+            if st == prefix:
+                return full
+
+    return st
+
+
 autofill_rules = [
     AutofillRule.regex(r'(?<!")\b\d+(?:\.\d+)?\b(?!")(?=(?:[^"]*"[^"]*")*[^"]*$)', "[[red]]%s[[reset]]",at_end=False),
     AutofillRule(on_char=autofill_func),
-    AutofillRule.replace("help", "nada")
+    AutofillRule(on_char=autofill,text_replacement=True, cancel_char=True, on_tab=True),
 ]
 ON_INPUT= False
 async def main():

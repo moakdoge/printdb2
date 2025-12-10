@@ -85,10 +85,12 @@ async def input(prompt: str) -> str:
 '''
 
 class AutofillRule():
-    def __init__(self, on_send=None, on_char=None, text_replacement=False):
+    def __init__(self, on_send=None, on_char=None, text_replacement=False, on_tab=False, cancel_char = False):
         self.on_send = on_send
         self.on_char = on_char
         self.text_replacement = text_replacement
+        self.on_tab = on_tab
+        self.cancel = cancel_char
 
     @classmethod
     def regex(cls, regex: str, replacement: str, at_end=False):
@@ -139,7 +141,17 @@ async def input(prompt: str, history: list[str] | None = None, rules: list[Autof
         char = await get_character()
         for rule in rules:
             if rule.text_replacement and rule.on_char is not None:
-                typed = rule.on_char(typed)
+                old_t = len(typed)
+                if not rule.on_tab:
+                    typed = rule.on_char(typed)
+                elif rule.on_tab and char == "\t":
+                    typed = rule.on_char(typed)
+                    char = ""
+
+                if len(typed) - old_t > 0:
+                    if rule.cancel:
+                        char = ""
+                    cursor += len(typed) + old_t
         if char == "\x1b[A": #UP
             ind -= 1
             if ind < 0:
