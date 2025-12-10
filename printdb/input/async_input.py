@@ -1,6 +1,8 @@
 import asyncio
 import sys
 from printdb.logging.colors import *
+from printdb.parsing.tokenizer import *
+import printdb.api as api
 
 
 if sys.platform == "win32":
@@ -30,9 +32,15 @@ else:
 async def input(prompt: str) -> str:
     st = ""
     def log():
+        nonlocal st
+        cmd, args = tokenize_args(st)
         if len(st) > 1:
             print("\b" * (len(st)-1), end="")
-        print(colorize(f"[[red]]{st}[[reset]]"), end="", flush=True)
+        if api.manager.get_command(cmd):
+            raw = st.replace(cmd, f"[[green]]{cmd}[[red]]")
+        else:
+            raw = st
+        print(colorize(f"[[red]]{raw}[[reset]]"), end="", flush=True)
     print(prompt,end="",flush=True)
     while True:
         ch = await raw_getch()
