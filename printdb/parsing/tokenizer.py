@@ -75,5 +75,4 @@ def tokenize_args(s: str) -> tuple[str, list[str]]:
 
     if not tokens:
         return ("", [])
-
     return tokens[0], tokens[1:]

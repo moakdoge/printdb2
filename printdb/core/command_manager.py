@@ -50,18 +50,19 @@ class CommandManager:
         newcmd,mode,file = tokenizer.tokensize_redirects(cmd)
         pipes = tokenizer.tokenize_pipes(cmd)
 
-        out = None
+        out = command_output.CommandOutput(ErrorCode.SUCCESS, "", "")
         m = len(pipes) - 1
         for i, cmd in enumerate(pipes):
             is_at_end = (i >= m)
+
             if mode is not None and file is not None:
                 c, args = tokenizer.tokenize_args(newcmd)
-                out= self._run(c, args, redirect_file=file, redirect_mode=mode, input=out, mask_input=not is_at_end)
+                out= self._run(c, args, redirect_file=file, redirect_mode=mode, input=out.log, mask_input=not is_at_end)
             else:
                 c, args = tokenizer.tokenize_args(cmd)
-                out= self._run(c, args, input=out,mask_input=not is_at_end)
+                out= self._run(c, args, input=out.log,mask_input=not is_at_end)
         return out
-        pass
+
 
     def _run(self, cmd: str, args, redirect_file = None, redirect_mode = None, input=None, mask_input = False) -> command_output.CommandOutput:
         '''
@@ -83,8 +84,9 @@ class CommandManager:
                         return command_output.CommandOutput(ErrorCode.FILE_NOT_FOUND, output=f"Redirect file of '{redirect_file}' does not exist and you are in append mode!")
                     command_context.output.redirect_file(redirect_file, append=True if redirect_mode == "a" else False)
                 try:
-                    if mask_input:
-                        command_context.output._masked = mask_input
+                    command_context.input._masked = True
+                    command_context.output._masked = mask_input
+
                     if input is not None:
                         command_context.input+= input
                     if args is not None:
@@ -97,7 +99,7 @@ class CommandManager:
                         return_value.log = command_context.output.read()
                         return return_value
                 except Exception as e:
-                    traceback.trace_error(e)
+                    print(traceback.trace_error(e))
         return command_output.CommandOutput(ErrorCode.COMMAND_NOT_FOUND, output="Command not found")
     
     def get_command(self, cmd: str) -> Command | None:
