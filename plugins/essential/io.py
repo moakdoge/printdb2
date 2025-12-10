@@ -1,7 +1,7 @@
 from printdb.api import *
 
 @manager.command("cat", author="moakdoge")
-def cat(ctx: CommandContext, file: Path = None, content: str = ""): # type: ignore
+async def cat(ctx: CommandContext, file: Path = None, content: str = ""): # type: ignore
     '''
         Reads out the contents of a file / string to print.
     '''
@@ -12,7 +12,7 @@ def cat(ctx: CommandContext, file: Path = None, content: str = ""): # type: igno
 
 
 @manager.command("echo",author="moakdoge")
-def echo(ctx: CommandContext, *args: str):
+async def echo(ctx: CommandContext, *args: str):
     '''
         Repeats any file, argument, or pipe input passed in.
     '''

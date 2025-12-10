@@ -32,8 +32,8 @@ class Command:
             defu = param.default if not param.default == inspect._empty else None
             self.details.args.append(Arg(name, param.annotation, defu, opt))
 
-    def run(self, context: context.CommandContext, *args):
-        self.func(context, *args)
+    async def run(self, context: context.CommandContext, *args):
+        await self.func(context, *args)
 
     #little bits of helper shit
     def __repr__(self):

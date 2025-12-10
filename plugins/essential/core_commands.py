@@ -1,7 +1,7 @@
 from printdb.api import *
 
 @manager.command("help", author="moakdoge")
-def help(ctx: CommandContext, command: str = ""):
+async def help(ctx: CommandContext, command: str = ""):
     '''
         Provides a list of every command and details about them.
     '''

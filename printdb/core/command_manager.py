@@ -6,7 +6,7 @@ from .command_output import ErrorCode
 from .command import Command,CommandDetails
 from printdb.parsing import argparser, tokenizer
 from .exceptions import *
-import os
+import os, asyncio
 class CommandManager:
 
     def __init__(self):
@@ -57,14 +57,14 @@ class CommandManager:
 
             if mode is not None and file is not None:
                 c, args = tokenizer.tokenize_args(newcmd)
-                out= self._run(c, args, redirect_file=file, redirect_mode=mode, input=out.log, mask_input=not is_at_end)
+                out= asyncio.run(self._run(c, args, redirect_file=file, redirect_mode=mode, input=out.log, mask_input=not is_at_end))
             else:
                 c, args = tokenizer.tokenize_args(cmd)
-                out= self._run(c, args, input=out.log,mask_input=not is_at_end)
+                out= asyncio.run(self._run(c, args, input=out.log,mask_input=not is_at_end))
         return out
 
 
-    def _run(self, cmd: str, args, redirect_file = None, redirect_mode = None, input=None, mask_input = False) -> command_output.CommandOutput:
+    async def _run(self, cmd: str, args, redirect_file = None, redirect_mode = None, input=None, mask_input = False) -> command_output.CommandOutput:
         '''
             DO NOT CALL! call the normal run instead, unless you are a plugin trying to run a command manually.
         '''
@@ -90,9 +90,9 @@ class CommandManager:
                     if input is not None:
                         command_context.input+= input
                     if args is not None:
-                        return_value = command.run(command_context, *args)
+                        return_value = await command.run(command_context, *args)
                     else:
-                        return_value = command.run(command_context, None)
+                        return_value = await command.run(command_context, None)
                     if not isinstance(return_value, command_output.CommandOutput):
                         return command_output.CommandOutput(ErrorCode.SUCCESS, log=command_context.output.read())
                     else:
