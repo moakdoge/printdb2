@@ -12,6 +12,7 @@ class CommandManager:
     def __init__(self):
         self._commands: list[Command] = []
         self._loaded_plugins: list[ModuleType] = []
+        self._tasks: list = []
         pass
 
     def register_command(self, command: Command):
@@ -49,7 +50,9 @@ class CommandManager:
         #tokenize into pipes and redirects
         newcmd,mode,file = tokenizer.tokensize_redirects(cmd)
         pipes = tokenizer.tokenize_pipes(cmd)
-
+        bg= False
+        if cmd.endswith("&"):
+            bg = True
         out = command_output.CommandOutput(ErrorCode.SUCCESS, "", "")
         m = len(pipes) - 1
         for i, cmd in enumerate(pipes):
@@ -57,14 +60,23 @@ class CommandManager:
 
             if mode is not None and file is not None:
                 c, args = tokenizer.tokenize_args(newcmd)
-                out= await self._run(c, args, redirect_file=file, redirect_mode=mode, input=out.log, mask_input=not is_at_end)
+                out= await self._run(c, args, redirect_file=file, redirect_mode=mode, input=out.log, mask_input=not is_at_end, backgound=bg)
             else:
                 c, args = tokenizer.tokenize_args(cmd)
-                out= await self._run(c, args, input=out.log,mask_input=not is_at_end)
+                out= await self._run(c, args, input=out.log,mask_input=not is_at_end, backgound=bg)
         return out
 
 
-    async def _run(self, cmd: str, args, redirect_file = None, redirect_mode = None, input=None, mask_input = False) -> command_output.CommandOutput:
+    async def _track_task(self, task: asyncio.Task):
+        self._tasks.append(task)
+        def on_task_finish(t):
+            self._tasks = [m for m in self._tasks if not m.done()]
+        task.add_done_callback(on_task_finish)
+
+    async def _spawn(self, func):
+        await self._track_task(asyncio.create_task(func))
+
+    async def _run(self, cmd: str, args, redirect_file = None, redirect_mode = None, input=None, mask_input = False, backgound=False) -> command_output.CommandOutput:
         '''
             DO NOT CALL! call the normal run instead, unless you are a plugin trying to run a command manually.
         '''
@@ -89,10 +101,20 @@ class CommandManager:
 
                     if input is not None:
                         command_context.input+= input
+                    
                     if args is not None:
-                        return_value = await command.run(command_context, *args)
+                        if backgound:
+                            await self._spawn(command.run(command_context, *args))
+                            print(f"[{len(self._tasks)} / inf]: {cmd}")
+                            return_value = command_output.CommandOutput(ErrorCode.SUCCESS, f"Started thread [{len(self._tasks)}]")
+                        else:
+                            return_value = await command.run(command_context, *args)
                     else:
-                        return_value = await command.run(command_context, None)
+                        if backgound:
+                            self._tasks.append(asyncio.create_task(command.run(command_context, None)))
+                            return_value = command_output.CommandOutput(ErrorCode.SUCCESS, f"Started thread [{len(self._tasks)}]")
+                        else:
+                            return_value = await command.run(command_context, *args)
                     if not isinstance(return_value, command_output.CommandOutput):
                         return command_output.CommandOutput(ErrorCode.SUCCESS, log=command_context.output.read())
                     else:

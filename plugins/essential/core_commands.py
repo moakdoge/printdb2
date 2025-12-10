@@ -24,3 +24,9 @@ async def help(ctx: CommandContext, command: str = ""):
             ctx.print("")
 
 
+@manager.command("wait", author="moakdoge")
+async def wait(ctx: CommandContext, seconds: float):
+    '''
+    Waits a certain amount of seconds.
+    '''
+    await delay(seconds)

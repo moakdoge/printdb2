@@ -6,7 +6,7 @@ manager.load_plugin_folder(f"{os.path.join(os.path.split(__file__)[0], "plugins"
 
 async def main():
     while True:
-        content = input(input_prompt.input_prompt())
+        content = await asyncio.to_thread(input, input_prompt.input_prompt())
         output = await manager.run(content)
         if output.error_code != ErrorCode.SUCCESS:
             print(input_prompt.error(output))
