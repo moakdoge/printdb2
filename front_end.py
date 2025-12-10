@@ -13,35 +13,12 @@ def resource_path(rel_path: str) -> str:
     return os.path.join(base, rel_path)
 manager.load_plugin_folder(f"{resource_path("plugins")}")
 
-
-def autofill_func(st):
-    for cmd in manager.get_commands():
-        st = st.replace(cmd.command, f"[[green]]{cmd.command}[[reset]]")
-    return st
-
-def autofill(st):
-    # Only autofill the *first* token
-    if " " in st:
-        return st  # stop autofill once args start
-
-    for cmd in manager.get_commands():
-        full = cmd.command
-
-        # generate prefixes: h, he, hel, help
-        for i in range(1, len(full)):
-            prefix = full[:i]
-
-            if st == prefix:
-                return full
-
-    return st
-
-
 autofill_rules = [
     AutofillRule.regex(r'(?<!")\b\d+(?:\.\d+)?\b(?!")(?=(?:[^"]*"[^"]*")*[^"]*$)', "[[red]]%s[[reset]]",at_end=False),
-    AutofillRule(on_char=autofill_func),
-    AutofillRule(on_char=autofill,text_replacement=True, cancel_char=True, on_tab=True),
+    AutofillRule.autofill(manager.get_command_names()),
+    AutofillRule.replace(manager.get_command_names(), "[[green]]%s[[reset]]", replace_text=False)
 ]
+
 ON_INPUT= False
 async def main():
     await manager.stop()

@@ -105,10 +105,30 @@ class AutofillRule():
             return AutofillRule(on_char=replace_regex)
     
     @classmethod
-    def replace(cls, rep: str, replacement: str):
+    def replace(cls, rep: list | str, replacement: str, replace_text: bool = True):
         def re(inp: str):
-            return inp.replace(rep, replacement)
-        return AutofillRule(on_char=re, text_replacement=True)
+            if isinstance(rep, list):
+                for i in rep:
+                    inp = inp.replace(i, replacement % i)
+                return inp
+            else:
+                return inp.replace(rep, replacement)
+        return AutofillRule(on_char=re, text_replacement=replace_text)
+
+    @classmethod
+    def autofill(cls, lis: list[str], tab: bool = True):
+        def autofill(st):
+            if " " in st:
+                return st
+            for cmd in lis:
+                full = cmd
+                for i in range(1, len(full)):
+                    prefix = full[:i]
+                    if st == prefix:
+                        return full
+
+            return st
+        return AutofillRule(on_char=autofill, text_replacement=True, on_tab=tab,cancel_char=True)
 
 
 async def input(prompt: str, history: list[str] | None = None, rules: list[AutofillRule] | None = None):

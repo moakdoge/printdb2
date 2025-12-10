@@ -35,6 +35,8 @@ class CommandManager:
         self._loaded_plugins.append(module)
         return module
     
+    def get_command_names(self):
+        return [s.command for s in self._commands]
     def get_commands(self) -> list[Command]:
         return self._commands
     
