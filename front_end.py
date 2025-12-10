@@ -2,7 +2,7 @@ from printdb.api import manager, ErrorCode
 from printdb.api.frontend import tokenizer, colorize, input_prompt
 import readline,os,asyncio
 from aioconsole import ainput
-from printdb.input.async_input import input
+from printdb.input.async_input import input, AutofillRule
 import sys
 
 def resource_path(rel_path: str) -> str:
@@ -13,6 +13,16 @@ def resource_path(rel_path: str) -> str:
     return os.path.join(base, rel_path)
 manager.load_plugin_folder(f"{resource_path("plugins")}")
 
+
+def autofill_func(st):
+    for cmd in manager.get_commands():
+        st = st.replace(cmd.command, f"[[green]]{cmd.command}[[reset]]")
+    return st
+
+autofill_rules = [
+    AutofillRule.regex(r'(?<!")\b\d+(?:\.\d+)?\b(?!")(?=(?:[^"]*"[^"]*")*[^"]*$)', "[[red]]%s[[reset]]",at_end=False),
+    AutofillRule(on_char=autofill_func)
+]
 ON_INPUT= False
 async def main():
     await manager.stop()
@@ -20,7 +30,7 @@ async def main():
     while True:
         if True:
             ON_INPUT = True
-            content = await input(input_prompt.input_prompt(), history=manager._command_history)
+            content = await input(input_prompt.input_prompt(), history=manager._command_history, rules=autofill_rules)
             ON_INPUT = False
             await manager.run(content)
 

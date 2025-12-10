@@ -84,9 +84,29 @@ async def input(prompt: str) -> str:
         log()
 '''
 
-async def input(prompt: str, history: list[str] | None = None):
+class AutofillRule():
+    def __init__(self, on_send=None, on_char=None):
+        self.on_send = on_send
+        self.on_char = on_char
+
+    @classmethod
+    def regex(cls, regex: str, replacement: str, at_end=False):
+        '''Use %s as s'''
+        def replace_regex(t):
+            def repl(match):
+                return colorize(replacement % match.group(0))
+            return re.sub(regex, repl, t)
+        if at_end:
+            return AutofillRule(on_send=replace_regex)
+        else:
+            return AutofillRule(on_char=replace_regex)
+
+
+async def input(prompt: str, history: list[str] | None = None, rules: list[AutofillRule] | None = None):
     if history == None:
         history = []
+    if rules == None:
+        rules = []
     typed = ""
     cursor = 0
     stdout.write("\x1b[?25l")  # hide cursor
@@ -141,6 +161,11 @@ async def input(prompt: str, history: list[str] | None = None):
             char = ""
         # ENTER
         if char in ("\r", "\n"):
+            for rule in rules:
+                if rule.on_char is not None:
+                    display = colorize(rule.on_char(display))
+                if rule.on_send is not None:
+                    display = rule.on_send(display)
             stdout.write("\r" + prompt + display + "\x1b[K")
             stdout.write("\x1b[?25h\n")  # show cursor and newline
             stdout.flush()
@@ -159,10 +184,14 @@ async def input(prompt: str, history: list[str] | None = None):
 
         # RENDER FRAME
 
+        
+
         display = (
             typed[:cursor] +(typed[cursor] if cursor < len(typed) else " ")+
             typed[cursor + (1 if cursor < len(typed) else 0):]
         )
+
+
         new_disp = ""
         for index, l in enumerate(display):
             if index == cursor:
@@ -171,6 +200,9 @@ async def input(prompt: str, history: list[str] | None = None):
                 new_disp+=l
             
 
+        for rule in rules:
+            if rule.on_char != None:
+                new_disp = rule.on_char(new_disp)
         out = prompt + colorize(new_disp)
         stdout.write("\r" + out + "\x1b[K")
         old_len = len(out)
