@@ -176,7 +176,8 @@ async def input(prompt: str, history: list[str] | None = None, rules: list[Autof
             ind -= 1
             if ind < 0:
                 ind = 0
-            typed = history[ind]
+            if (ind > -1 and ind < len(history)):
+                typed = history[ind]
             char = ""
         if char == "\x1b[B": #DOWN
             ind += 1
@@ -185,7 +186,8 @@ async def input(prompt: str, history: list[str] | None = None, rules: list[Autof
             if ind == len(history):
                 typed = ""        # blank line after last history item
             else:
-                typed = history[ind]
+                if (ind > -1 and ind < len(history)):
+                    typed = history[ind]
             char = ""
 
         if cursor > len(typed):

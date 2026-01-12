@@ -13,3 +13,6 @@ def trace_error(er):
     code = linecache.getline(filename, lineno).strip()
     ty = type(er).__name__
     return colors.colorize(f"[[red]]{ty} raised @ Line {lineno}\n\tFile {filename}\n\t{code} <--- [HERE]\n{er}[[reset]]")
+
+def throw(er):
+    print(colors.colorize(f"[[bold]][[red]]Error raised:[[reset]][[red]] {er.__repr__()}[[reset]]"))

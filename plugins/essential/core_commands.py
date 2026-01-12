@@ -59,3 +59,8 @@ async def control_tasks(ctx: CommandContext, mode: str = "list", target: str = "
                 f"\t[[red]]Runtime:[[cyan]]{task.runtime}[[reset]]"
             ]
             await ctx.pprint("\n".join(lines))
+
+
+@manager.command("test-exception", author="moakdoge")
+async def test_exception(ctx: CommandContext, message: str = "Example execption raised by test-exception"):
+    raise Exception(message)

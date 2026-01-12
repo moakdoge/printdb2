@@ -17,6 +17,7 @@ class CommandDetails:
 class Command:
     def __init__(self, command: str, func: Callable, flags: CommandFlags | None = None, details: CommandDetails | None = None):
         self.command = command
+        self.name = command 
         self.func = func
         self.flags = flags if flags is not None else CommandFlags()
         self.details = details if details is not None else CommandDetails()
@@ -40,4 +41,4 @@ class Command:
 
     #little bits of helper shit
     def __repr__(self):
-        return f"<Command {self.command} ({self.func})>"
+        return f"<Command {self.name} ({self.func})>"

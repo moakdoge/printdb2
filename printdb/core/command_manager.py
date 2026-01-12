@@ -136,47 +136,54 @@ class CommandManager:
             DO NOT CALL! call the normal run instead, unless you are a plugin trying to run a command manually.
         '''
         for command in self._commands:
-            if command.command == cmd:
+            if command.name == cmd:
+
+                #generate ctx to run command and parse args
                 command_context:context.CommandContext = context.CommandContext(cmd, inp=input)
-                try:
-                    args = argparser.type_check_args(command,args)
-                except InvalidParamType as e:
-                    return None
-                except MissingParam as e:
-                    return None
+                args = argparser.type_check_args(command,args)
 
+                #generate inputs
+                input_ctx = command_context.input
+                output_ctx = command_context.output
 
+                #for redirects
                 if redirect_file is not None and redirect_mode is not None:
-                    if redirect_mode == "a" and not os.path.exists(redirect_file):
-                        return None #command_output.CommandOutput(ErrorCode.FILE_NOT_FOUND, output=f"Redirect file of '{redirect_file}' does not exist and you are in append mode!")
-                    command_context.output.redirect_file(redirect_file, append=True if redirect_mode == "a" else False)
+                    append = (redirect_mode == "a")
+                    command_context.output.redirect_file(redirect_file, append=append)
+                elif redirect_file is not None:
+                    traceback.throw(f"Please provide a redirect file!")
+                    return
+                elif redirect_mode is not None:
+                    traceback.throw(f"Please provide a redirect mode! Options are: a, w, wb")
+                
+                #Attempt to run command
                 try:
                     args = args or ()
-                    command_context.input._terminal = True
-                    command_context.output._terminal = not mask_input
+                    input_ctx._terminal = True
+                    output_ctx._terminal = (not mask_input)
+                    
+                    #allows starting.. should be removed
                     if input is not None:
                         import printdb.logging.sink as snk
                         if not isinstance(input, snk.LogSink):
                             await command_context.input.write(input)
                     
-                        # Normalize args
 
                     if background:
                         print(f"[{len(self._tasks)} / inf]: {cmd}")
-                        return await self._spawn(command, command_context, foreground=False, args=args)
+                        return await self._spawn(command, command_context, foreground=False, args=args) # type: ignore
                     else:
-                        return await self._spawn(command, command_context, foreground=True, args=args)
+                        return await self._spawn(command, command_context, foreground=True, args=args) #type: ignore
                 
                 except Exception as e:
                     print(traceback.trace_error(e))
-        try:
-            raise FileNotFoundError("Command %s not found!" % cmd)
-        except Exception as e:
-            print(traceback.trace_error(e))
+                    return None
+            
+        traceback.throw("Command %s is not found! Did you mistype it?" % cmd)
         return None
     
     def get_command(self, cmd: str) -> Command | None:
         for command in self._commands:
-            if command.command == cmd:
+            if command.name == cmd:
                 return command
         return None
