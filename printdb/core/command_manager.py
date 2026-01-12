@@ -53,40 +53,46 @@ class CommandManager:
                     self.load_plugin(os.path.join(dirpath, file))
 
 
-    async def run(self, cmd: str) -> CommandTask | None:
-        #tokenize into pipes and redirects
-        self._command_history.append(cmd)
-        newcmd,mode,file = tokenizer.tokensize_redirects(cmd)
-        pipes = tokenizer.tokenize_pipes(cmd)
-        bg= False
-        if cmd.endswith("&"):
-            bg = True
-        out = None
-        m = len(pipes) - 1
+    async def run(self, cmd: str, add_to_history: bool = False) -> CommandTask | None:
+        if add_to_history:
+            self._command_history.append(cmd)
 
+        #tokenize into pipes and redirects
+        command,redirect_mode,redirect_file = tokenizer.tokensize_redirects(cmd)
+        pipes = tokenizer.tokenize_pipes(cmd)
+        background = cmd.endswith("&")
+
+        out = None
+        pipes_count = len(pipes) - 1
         other_tasks = []
-        for i, cmd in enumerate(pipes):
-            is_at_end = (i >= m)
-            if out is None:
-                d = None
-            else:
-                d=out.ctx.output
+        last_output = None
+
+        for _, cmd in enumerate(pipes):
+            is_at_end = (_ >= pipes_count)
+            
+            last_output = None
+            if out is not None:
+                last_output=out.ctx.output
                 other_tasks.append(out)
-            if mode is not None and file is not None:
-                c, args = tokenizer.tokenize_args(newcmd)
-                out= await self._run(c, args, redirect_file=file, redirect_mode=mode, input=d, mask_input=not is_at_end, background=bg)
+
+            if redirect_mode is not None and redirect_file is not None:
+                out= await self._run(*tokenizer.tokenize_args(command), redirect_file=redirect_file, redirect_mode=redirect_mode, input=last_output, mask_input=not is_at_end, background=background)
             else:
-                c, args = tokenizer.tokenize_args(cmd)
-                out= await self._run(c, args, input=d,mask_input=not is_at_end, background=bg)
-        last_inp = None
+                out= await self._run(*tokenizer.tokenize_args(cmd), input=last_output,mask_input=not is_at_end, background=background)
+
+        last_input = None
         if isinstance(out, CommandTask):
-            out.ctx.output._terminal = False
-            for tk in other_tasks:
+            last_output = out.ctx.output
+            last_output._terminal = False
+
+            for tk in other_tasks: #link all the tasks
                 out.link_task(tk)
-                tk.ctx.input = last_inp
-                last_inp = tk.ctx.output
-            out.ctx.input= last_inp
+                tk.ctx.input = last_input
+                last_input = tk.ctx.output
+            
+            out.ctx.input= last_input # type: ignore
             return out
+        
         return None
 
 
@@ -150,7 +156,6 @@ class CommandManager:
                     command_context.output._terminal = not mask_input
                     if input is not None:
                         import printdb.logging.sink as snk
-                        print(type(input))
                         if not isinstance(input, snk.LogSink):
                             await command_context.input.write(input)
                     
@@ -159,10 +164,15 @@ class CommandManager:
                     if background:
                         print(f"[{len(self._tasks)} / inf]: {cmd}")
                         return await self._spawn(command, command_context, foreground=False, args=args)
-
-                    return await self._spawn(command, command_context, foreground=True, args=args)
+                    else:
+                        return await self._spawn(command, command_context, foreground=True, args=args)
+                
                 except Exception as e:
                     print(traceback.trace_error(e))
+        try:
+            raise FileNotFoundError("Command %s not found!" % cmd)
+        except Exception as e:
+            print(traceback.trace_error(e))
         return None
     
     def get_command(self, cmd: str) -> Command | None:
