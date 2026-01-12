@@ -39,7 +39,8 @@ class CommandManager:
         return module
     
     def get_command_names(self):
-        return [s.command for s in self._commands]
+        return [s.name for s in self._commands]
+    
     def get_commands(self) -> list[Command]:
         return self._commands
     
@@ -53,7 +54,7 @@ class CommandManager:
                     self.load_plugin(os.path.join(dirpath, file))
 
 
-    async def run(self, cmd: str, add_to_history: bool = False) -> CommandTask | None:
+    async def run(self, cmd: str, add_to_history: bool = True) -> CommandTask | None:
         if add_to_history:
             self._command_history.append(cmd)
 
@@ -95,27 +96,47 @@ class CommandManager:
         
         return None
 
-
+    async def cleanup(self):
+        '''Removes any complete tasks. Should be handled, but this is a fallback.'''
+        self._tasks = [m for m in self._tasks if not m.task.done()]
+    
     async def _track_task(self, task: CommandTask):
+        if task in self._tasks:
+            return #we've already processes this task
+    
         self._tasks.append(task)
+
         def on_task_finish(t: asyncio.Task):
             nonlocal task
-            self._tasks = [m for m in self._tasks if not m.task.done()]
+
+            #Clean up CTXs
             if task.ctx.output is not None:
                 task.ctx.output.close()
+                del task.ctx.output
+
             if task.ctx.input is not None:
                 task.ctx.input.close()
+                del task.ctx.input
+            
+            #if foreground, let other tasks take control
             if self._fore == task:
                 self._fore = None
-            t.cancel()
+            
+            #cleanup
+            del task
+
         task.task.add_done_callback(on_task_finish)
 
-    async def _spawn(self, cmd: Command, cont: context.CommandContext, foreground=False, args: tuple = ()):
-        new_task = CommandTask(cmd, cont, asyncio.create_task(cmd.func(cont, *args)))
+    async def _spawn(self, command: Command, ctx: context.CommandContext, foreground=False, args: tuple = ()):
+        task=asyncio.create_task(command.func(ctx, *args)) #create a task by calling this function
+        new_task = CommandTask(command, ctx, task)
+        
+        #register it
         await self._track_task(new_task)
         if foreground and self._fore is None:
             self._fore = new_task
             await new_task.task
+        
         return new_task
 
     async def stop(self) -> bool:
@@ -125,6 +146,7 @@ class CommandManager:
             return True
         else:
             await self.stop_all()
+
         return False
         
     async def stop_all(self):
