@@ -112,11 +112,9 @@ class CommandManager:
             #Clean up CTXs
             if task.ctx.output is not None:
                 task.ctx.output.close()
-                del task.ctx.output
 
             if task.ctx.input is not None:
                 task.ctx.input.close()
-                del task.ctx.input
             
             #if foreground, let other tasks take control
             if self._fore == task:
@@ -164,9 +162,6 @@ class CommandManager:
                 command_context:context.CommandContext = context.CommandContext(cmd, inp=input)
                 args = argparser.type_check_args(command,args)
 
-                #generate inputs
-                input_ctx = command_context.input
-                output_ctx = command_context.output
 
                 #for redirects
                 if redirect_file is not None and redirect_mode is not None:
@@ -177,12 +172,12 @@ class CommandManager:
                     return
                 elif redirect_mode is not None:
                     traceback.throw(f"Please provide a redirect mode! Options are: a, w, wb")
-                
+
                 #Attempt to run command
                 try:
                     args = args or ()
-                    input_ctx._terminal = True
-                    output_ctx._terminal = (not mask_input)
+                    command_context.input._terminal = True
+                    command_context.output._terminal = (not mask_input)
                     
                     #allows starting.. should be removed
                     if input is not None:
@@ -201,7 +196,7 @@ class CommandManager:
                     print(traceback.trace_error(e))
                     return None
             
-        traceback.throw("Command %s is not found! Did you mistype it?" % cmd)
+        traceback.throw("Command [[green]]%s[[red]] is not found! Did you mistype it?" % cmd)
         return None
     
     def get_command(self, cmd: str) -> Command | None:

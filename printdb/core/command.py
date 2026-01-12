@@ -16,7 +16,7 @@ class CommandDetails:
 
 class Command:
     def __init__(self, command: str, func: Callable, flags: CommandFlags | None = None, details: CommandDetails | None = None):
-        self.command = command
+        self.command = command #backwards compatibility
         self.name = command 
         self.func = func
         self.flags = flags if flags is not None else CommandFlags()
