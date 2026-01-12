@@ -55,6 +55,10 @@ class CommandManager:
 
 
     async def run(self, cmd: str, add_to_history: bool = True) -> CommandTask | None:
+        #checks for whitespace
+        if cmd.strip().replace(" ", "") == "":
+            return
+        
         if add_to_history:
             self._command_history.append(cmd)
 

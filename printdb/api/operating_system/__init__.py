@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 class OSFunctions():
     def __init__(self) -> None:
+        self._path = Path(os.getcwd())
         pass
     
     def _path_to_str(self, file: Path | str):
@@ -18,6 +19,26 @@ class OSFunctions():
             content = _file.read()
             _file.close()
         return content
+
+    def list_dir(self, path: Path | None = None) -> list[Path]:
+        if path is None:
+            path = self._path
+        return [Path(f) for f in os.listdir(path.expanduser().resolve().absolute())]
+    
+    def list_files(self, path: Path | None = None):
+        return sorted([f for f in self.list_dir(path) if f.is_file()])
+
+    def list_folders(self, path: Path | None = None):
+        return sorted([f for f in self.list_dir(path) if f.is_dir()])
+    
+    def is_executable(self, path: Path | None = None):
+        if path is None:
+            path = self._path
+
+        if not path.exists():
+            return False
+        
+        return (path.is_file() and os.access(str(path.absolute()), os.X_OK))
 
     pass
 

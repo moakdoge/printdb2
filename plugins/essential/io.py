@@ -18,7 +18,7 @@ async def output(ctx: CommandContext):
     while True:
         o = await ctx.input.read()
         print(o)
-        
+
 @manager.command("yes", author="moakdoge")
 async def yes(ctx:CommandContext):
     '''Constantly sends a stream of yesses until killed'''
@@ -37,3 +37,22 @@ async def echo(ctx: CommandContext, *args: str):
 
     await ctx.pprint(" ".join(args))
     return CommandOutput(ErrorCode.SUCCESS, "Logged input")
+
+@manager.command("ls", author="moakdoge")
+async def ls(ctx: CommandContext, hidden: bool = False):
+    '''Prints all files in the current directory.'''
+    files = OSLib.list_files()
+    folders = OSLib.list_folders()
+
+    for folder in folders:
+        if folder.name.startswith(".") and not hidden:
+            continue
+        await ctx.pprint(f"[[blue]][[bold]]{folder.name}[[reset]]")
+
+    for file in files:
+        if file.name.startswith(".") and not hidden:
+            continue
+        if OSLib.is_executable(file):
+            await ctx.pprint(f"[[green]]{file.name}[[reset]]")
+            continue
+        await ctx.pprint(f"{file.name}")
