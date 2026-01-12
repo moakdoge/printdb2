@@ -156,9 +156,9 @@ class CommandManager:
                     
                         # Normalize args
 
-                        if background:
-                            print(f"[{len(self._tasks)} / inf]: {cmd}")
-                            return await self._spawn(command, command_context, foreground=False, args=args)
+                    if background:
+                        print(f"[{len(self._tasks)} / inf]: {cmd}")
+                        return await self._spawn(command, command_context, foreground=False, args=args)
 
                     return await self._spawn(command, command_context, foreground=True, args=args)
                 except Exception as e:

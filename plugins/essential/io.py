@@ -18,6 +18,7 @@ async def output(ctx: CommandContext):
     while True:
         o = await ctx.input.read()
         print(o)
+        
 @manager.command("yes", author="moakdoge")
 async def yes(ctx:CommandContext):
     '''Constantly sends a stream of yesses until killed'''
