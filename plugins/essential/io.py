@@ -56,3 +56,7 @@ async def ls(ctx: CommandContext, hidden: bool = False):
             await ctx.pprint(f"[[green]]{file.name}[[reset]]")
             continue
         await ctx.pprint(f"{file.name}")
+    
+@manager.command("cd", author="moakdoge")
+async def cd(ctx: CommandContext, path: Path):
+    OSLib.change_dir(path)
