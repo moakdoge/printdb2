@@ -52,8 +52,8 @@ async def control_tasks(ctx: CommandContext, mode: str = "list", target: str = "
     if mode == "list":
         for i, task in enumerate(manager._tasks):
             lines = [
-                f"[[red]][[bold]]{task.get_name()} (PID: {i}) :[[reset]]",
-                f"\t[[red]]Complete:[[cyan]] {task.done()}[[reset]]",
-                f"\t[[red]]Command:[[cyan]] {task.get_stack()}"
+                f"[[red]][[bold]]PID: {i}[[reset]]",
+                f"\t[[red]]Complete:[[cyan]] {task.complete}[[reset]]",
+                f"\t[[red]]Command:[[cyan]] {task.command.command}"
             ]
             ctx.pprint("\n".join(lines))

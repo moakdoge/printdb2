@@ -6,7 +6,8 @@ async def cat(ctx: CommandContext, file: Path = None, content: str = ""): # type
         Reads out the contents of a file / string to print.
     '''
     if file is not None:
-        ctx.print(OSLib.read(file))
+        async for chunk in OSLib.read_chunks(file, by=True): 
+            ctx.print(chunk)
     else:
         ctx.print(content)
 
