@@ -42,11 +42,10 @@ def convert_str(s: str):
             return True
         return False
 
-        
-    if is_int(s):
-        return int(s)
     if is_float(s):
         return float(s)
+    if is_int(s):
+        return int(s)
     if is_bool(s):
         if s.lower() in allowed_trues:
             return True

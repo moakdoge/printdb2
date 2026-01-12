@@ -22,7 +22,7 @@ async def output(ctx: CommandContext):
 async def yes(ctx:CommandContext):
     '''Constantly sends a stream of yesses until killed'''
     while True:
-        await ctx.output.write("y")
+        await ctx.output.write("y\n")
         await delay(0.1)
 
 @manager.command("echo",author="moakdoge")
@@ -31,7 +31,8 @@ async def echo(ctx: CommandContext, *args: str):
         Repeats any file, argument, or pipe input passed in.
     '''
     if len(args) < 1:
-        if ctx.input.read() != "":
-            await ctx.pprint(ctx.input.read())
-            return CommandOutput(ErrorCode.SUCCESS, "Logged input")
+        async for i in ctx.input.read_chunks():
+            await ctx.print(i)
+
     await ctx.pprint(" ".join(args))
+    return CommandOutput(ErrorCode.SUCCESS, "Logged input")

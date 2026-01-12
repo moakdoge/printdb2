@@ -63,6 +63,7 @@ class CommandManager:
             bg = True
         out = None
         m = len(pipes) - 1
+
         other_tasks = []
         for i, cmd in enumerate(pipes):
             is_at_end = (i >= m)
@@ -91,12 +92,16 @@ class CommandManager:
 
     async def _track_task(self, task: CommandTask):
         self._tasks.append(task)
-        def on_task_finish(t):
+        def on_task_finish(t: asyncio.Task):
+            nonlocal task
             self._tasks = [m for m in self._tasks if not m.task.done()]
             if task.ctx.output is not None:
                 task.ctx.output.close()
             if task.ctx.input is not None:
                 task.ctx.input.close()
+            if self._fore == task:
+                self._fore = None
+            t.cancel()
         task.task.add_done_callback(on_task_finish)
 
     async def _spawn(self, cmd: Command, cont: context.CommandContext, foreground=False, args: tuple = ()):
@@ -155,7 +160,7 @@ class CommandManager:
                             print(f"[{len(self._tasks)} / inf]: {cmd}")
                             return await self._spawn(command, command_context, foreground=False, args=args)
 
-                    return await self._spawn(command, command_context, True, args)
+                    return await self._spawn(command, command_context, foreground=True, args=args)
                 except Exception as e:
                     print(traceback.trace_error(e))
         return None

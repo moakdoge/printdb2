@@ -1,7 +1,7 @@
 import asyncio
 import os
 
-
+IDLE = object()
 class LogSink:
     def __init__(self, terminal=False):
         self._queue = asyncio.Queue()
@@ -20,9 +20,18 @@ class LogSink:
         if self._file is not None:
             self._file.write(data)
             self._file.flush()
-
-        if self._terminal:
+        elif self._terminal:
             print(data,end="")
+
+
+
+    async def read_chunks(self):
+        while True:
+            item = await self._queue.get()
+            if item != IDLE:
+                yield item 
+            if item == IDLE:
+                break
 
 
     async def read(self) -> str:
@@ -37,4 +46,4 @@ class LogSink:
 
     def close(self):
         self._closed = True
-        self._queue.put_nowait("")  # unblock waiting consumers
+        self._queue.put_nowait(IDLE)  # unblock waiting consumers
