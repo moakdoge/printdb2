@@ -1,5 +1,7 @@
 from printdb.api import *
 import sys
+
+from printdb.core.command_task import CommandTask
 @manager.command("help", author="moakdoge")
 async def help(ctx: CommandContext, command: str = ""):
     '''
@@ -39,26 +41,48 @@ async def exi_t(ctx: CommandContext, exit_code: int = 1):
     sys.exit(exit_code)
 
 @manager.command("task", author="moakdoge")
-async def control_tasks(ctx: CommandContext, mode: str = "list", target: str = "all"):
+async def control_tasks(ctx: CommandContext, mode: str = "", target: str = "all"):
     '''
     Allows you to manage tasks.
     mode: must be list/stop/info
     target: all OR a specific proccess ID
     '''
-    allowed_modes = ["list", "stop", "info"]
-    await ctx.pprint("")
-    if mode.lower() not in allowed_modes:
-        await ctx.pprint("[[red]]Please choose one of the following: list/stop/info")
-        return CommandOutput(ErrorCode.GENERIC_ERROR, "Invalid mode")
-    if mode == "list":
-        for i, task in enumerate(manager._tasks):
-            lines = [
-                f"[[red]][[bold]]{task.task.get_name()} (PID: {i}) :[[reset]]",
-                f"\t[[red]]Complete:[[cyan]]{task.complete}[[reset]]",
-                f"\t[[red]]Command:[[cyan]]{task.command.command}[[reset]]",
-                f"\t[[red]]Runtime:[[cyan]]{task.runtime}[[reset]]"
-            ]
-            await ctx.pprint("\n".join(lines))
+    allowed_modes = ["list", "info", "kill"]
+    def generate_task_info(task: CommandTask, i="N/A"):
+        lines = [
+                    f"[[cyan]][[bold]]{task.task.get_name()}:[[reset]]",
+                    f"\t[[red]][[bold]]Complete: [[reset]][[cyan]]{task.complete}[[reset]]",
+                    f"\t[[red]][[bold]]Command: [[reset]][[cyan]]{task.command.name}[[reset]]",
+                    f"\t[[red]][[bold]]Runtime:[[reset]][[cyan]]{task.runtime: .3f}s[[reset]]"
+        ]
+        return "\n".join(lines)
+    
+    match mode:
+        case "list":
+            for i, task in enumerate(manager._tasks):
+                await ctx.pprint(generate_task_info(task))
+        case "kill":
+            if target == "all":
+                result = True
+                await manager.stop_all()
+            else:
+                result = await manager.kill(target)
+
+            if result:
+                await ctx.pprint(f"[[green]]Successfully killed task [[bold]]{target}[[reset]]")
+            else:
+                await ctx.pprint(f"[[red]]Unable to kill task [[bold]]{target}[[reset]]. [[red]]Is the task still alive?")
+        case "info":
+            if target == "all":
+                await control_tasks(ctx, mode="list")
+            else:
+                for task in manager._tasks:
+                    if task.task.get_name() == target:
+                        await ctx.pprint(generate_task_info(task))
+                        return
+                await ctx.pprint(f"[[red]]Could not find task [[bold]]{target}[[reset]]")
+        case _:        
+            await ctx.pprint(f"[[red]]Please choose one of the following: {"/".join(allowed_modes)}")
 
 
 @manager.command("test-exception", author="moakdoge")

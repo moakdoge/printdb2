@@ -166,6 +166,13 @@ class CommandManager:
     async def stop_all(self):
         for task in self._tasks:
             task.task.cancel()
+    
+    async def kill(self, task_id: str) -> bool:
+        for task in self._tasks:
+            if task.task.get_name() == task_id:
+                task.task.cancel()
+                return True
+        return False
 
     async def _run(self, cmd: str, args, redirect_file = None, redirect_mode = None, input=None, mask_input = False, background=False) -> CommandTask | None:
         '''
