@@ -5,7 +5,7 @@ class CommandContext:
         self.output = sink.LogSink()
         self.input = inp if inp is not None else sink.LogSink()
         pass
-    async def pprint(self, content: Any):
-        await self.output.write(f"{prettyify.prettyify(content)}\n")
+    async def pprint(self, content: Any, tabs: int = 0):
+        await self.output.write(f"{" "*(4*tabs)}{prettyify.prettyify(content)}\n")
     async def print(self, content: Any, end:str = "\n"):
         await self.output.write(f"{content}{end}")

@@ -8,7 +8,7 @@ async def help(ctx: CommandContext, command: str = ""):
     if manager is not None: #im lazy
         for cmd in manager.get_commands():
             if command != "":
-                if command != cmd.command:
+                if command != cmd.command and not command in cmd.aliases:
                     continue
             des=  cmd.details.description if cmd.details.description is not None else "N/A"
             aut = cmd.details.author if cmd.details.author is not None else "N/A" 
@@ -16,13 +16,13 @@ async def help(ctx: CommandContext, command: str = ""):
             args = cmd.details.args
             pretty_args = []
             for arg in args:
-                pretty_args.append(f"{arg.name}: [[yellow]]{arg.type.__name__}[[cyan]]{" [[green]](optional)[[cyan]]" if arg.optional else ""}")
-            await  ctx.pprint(f"\t[[bold]][[cyan]]{cmd.command}:[[reset]]")
-            await ctx.pprint(f"\t\t[[red]][[bold]]Args:[[reset]][[cyan]] {", ".join(pretty_args)}")
-            await ctx.pprint(f"\t\t[[red]][[bold]]Author:[[reset]][[cyan]] {aut}")
-            await ctx.pprint(f"\t\t[[red]][[bold]]Description:[[reset]][[cyan]] {des}")
-            await  ctx.print("")
-
+                pretty_args.append(f"\t\t{arg.name}: [[yellow]]{arg.type.__name__}[[cyan]]{" [[green]](optional)[[cyan]]" if arg.optional else ""}")
+            await ctx.pprint(f"[[bold]][[cyan]]{cmd.command}:[[reset]]", tabs=1)
+            await ctx.pprint(f"[[red]][[bold]]Args:[[reset]][[cyan]]\n {"\n".join(pretty_args)}",tabs=2)
+            await ctx.pprint(f"[[red]][[bold]]Author:[[reset]][[cyan]] {aut}",tabs=2)
+            await ctx.pprint(f"[[red]][[bold]]Aliases:[[reset]][[cyan]] {",".join(cmd.aliases) if len(cmd.aliases) > 0 else "N/A"}",tabs=2)
+            await ctx.pprint(f"[[red]][[bold]]Description:[[reset]][[cyan]] {des.replace("\n", "\n\t\t")}",tabs=2)
+            await ctx.print("")
 
 @manager.command("wait", author="moakdoge")
 async def wait(ctx: CommandContext, seconds: float):

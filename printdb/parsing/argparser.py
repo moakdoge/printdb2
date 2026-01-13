@@ -38,7 +38,7 @@ def convert_str(s: str):
         except Exception as e:
             return False 
     def is_path(s: str) -> bool:
-        if os.path.exists(s):
+        if os.path.exists(os.path.expanduser(os.path.expandvars(s))):
             return True
         return False
 

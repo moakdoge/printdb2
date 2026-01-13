@@ -18,6 +18,7 @@ class Command:
     def __init__(self, command: str, func: Callable, flags: CommandFlags | None = None, details: CommandDetails | None = None):
         self.command = command #backwards compatibility
         self.name = command 
+        self.aliases: list[str] = []
         self.func = func
         self.flags = flags if flags is not None else CommandFlags()
         self.details = details if details is not None else CommandDetails()

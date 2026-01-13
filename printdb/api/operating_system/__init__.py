@@ -67,10 +67,7 @@ class OSFunctions():
         return sorted(folders)
 
     
-    def is_executable(self, path: Path | None = None):
-        if path is None:
-            path = self._path
-
+    def is_executable(self, path: Path):
         if not path.exists():
             return False
         

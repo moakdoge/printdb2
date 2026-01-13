@@ -38,7 +38,7 @@ async def echo(ctx: CommandContext, *args: str):
     await ctx.pprint(" ".join([arg.__repr__() if not isinstance(arg, str) else arg for arg in args]))
     return CommandOutput(ErrorCode.SUCCESS, "Logged input")
 
-@manager.command("ls", author="moakdoge")
+@manager.command("ls", author="moakdoge", aliases=["dir"])
 async def ls(ctx: CommandContext, hidden: bool = False):
     '''Prints all files in the current directory.'''
     files = OSLib.list_files()

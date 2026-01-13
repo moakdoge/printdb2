@@ -24,9 +24,10 @@ class CommandManager:
         if command not in self._commands:
             self._commands.append(command)
     
-    def command(self, name: str, author: str = ""):
+    def command(self, name: str, author: str = "", aliases:list[str] | None =None):
         def decorator(func):
             cmd = Command(name,func,None,CommandDetails(author, func.__doc__))
+            cmd.aliases = aliases if aliases is not None else []
             self.register_command(cmd)
             return func
         return decorator 
@@ -39,7 +40,11 @@ class CommandManager:
         return module
     
     def get_command_names(self):
-        return [s.name for s in self._commands]
+        l = [s.name for s in self._commands]
+        for s in self._commands:
+            for _ in s.aliases:
+                l.append(_)
+        return l
     
     def get_commands(self) -> list[Command]:
         return self._commands
@@ -167,8 +172,8 @@ class CommandManager:
             DO NOT CALL! call the normal run instead, unless you are a plugin trying to run a command manually.
         '''
         for command in self._commands:
-            if command.name == cmd:
-
+            if command.name == cmd or cmd in command.aliases:
+                cmd = command.name
                 #generate ctx to run command and parse args
                 command_context:context.CommandContext = context.CommandContext(cmd, inp=input)
                 args = argparser.type_check_args(command,args)
