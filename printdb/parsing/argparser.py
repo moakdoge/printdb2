@@ -87,7 +87,13 @@ def type_check_args(command: Command, args: list) -> list[Any]:
             annotation = str
 
         if variadic:
-            typed.extend(provided[ai:])
+            new = []
+            for arg in provided[ai:]:
+                if isinstance(arg, annotation):
+                    new.append(arg)
+                else:
+                    raise InvalidParamType(f"Arg {arg} is not a valid type for annotation {annotation}")
+            typed.extend(new)
             ai = len(provided)
             break
 
@@ -104,14 +110,14 @@ def type_check_args(command: Command, args: list) -> list[Any]:
             if not isinstance(val, annotation):
                 if default is inspect._empty:
                     raise InvalidParamType(
-                        f"Argument '{name}' expected {annotation}, "
-                        f"got {type(val)} ({val})"
+                        f"Argument '{name}' expected {annotation.__name__}, "
+                        f"got {type(val).__name__} ({val})"
                     )
                 else:  # optional param
                     pi += 1
                     typed.append(default)
                     continue
-        except TypeError:
+        except TypeError as e:
             pass
 
         typed.append(val)

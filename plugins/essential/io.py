@@ -35,7 +35,7 @@ async def echo(ctx: CommandContext, *args: str):
         async for i in ctx.input.read_chunks():
             await ctx.print(i)
 
-    await ctx.pprint(" ".join(args))
+    await ctx.pprint(" ".join([arg.__repr__() if not isinstance(arg, str) else arg for arg in args]))
     return CommandOutput(ErrorCode.SUCCESS, "Logged input")
 
 @manager.command("ls", author="moakdoge")

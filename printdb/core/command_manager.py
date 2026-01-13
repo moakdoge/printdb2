@@ -55,52 +55,58 @@ class CommandManager:
 
 
     async def run(self, cmd: str, add_to_history: bool = True) -> CommandTask | None:
-        #checks for whitespace
-        if cmd.strip().replace(" ", "") == "":
-            return
-        
-        if add_to_history:
-            self._command_history.append(cmd)
+        try:
+            #checks for whitespace
+            if cmd.strip().replace(" ", "") == "":
+                return
+                
+            if add_to_history:
+                self._command_history.append(cmd)
 
-        #tokenize into pipes and redirects
-        command,redirect_mode,redirect_file = tokenizer.tokensize_redirects(cmd)
-        pipes = tokenizer.tokenize_pipes(cmd)
-        background = cmd.endswith("&")
+            #tokenize into pipes and redirects
+            command,redirect_mode,redirect_file = tokenizer.tokensize_redirects(cmd)
+            pipes = tokenizer.tokenize_pipes(cmd)
+            background = cmd.endswith("&")
 
-        out = None
-        pipes_count = len(pipes) - 1
-        other_tasks = []
-        last_output = None
-
-        for _, cmd in enumerate(pipes):
-            is_at_end = (_ >= pipes_count)
-            
+            out = None
+            pipes_count = len(pipes) - 1
+            other_tasks = []
             last_output = None
-            if out is not None:
-                last_output=out.ctx.output
-                other_tasks.append(out)
 
-            if redirect_mode is not None and redirect_file is not None:
-                out= await self._run(*tokenizer.tokenize_args(command), redirect_file=redirect_file, redirect_mode=redirect_mode, input=last_output, mask_input=not is_at_end, background=background)
-            else:
-                out= await self._run(*tokenizer.tokenize_args(cmd), input=last_output,mask_input=not is_at_end, background=background)
+            for _, cmd in enumerate(pipes):
+                is_at_end = (_ >= pipes_count)
+                
+                last_output = None
+                if out is not None:
+                    last_output=out.ctx.output
+                    other_tasks.append(out)
+                try:
+                    if redirect_mode is not None and redirect_file is not None:
+                        out= await self._run(*tokenizer.tokenize_args(command), redirect_file=redirect_file, redirect_mode=redirect_mode, input=last_output, mask_input=not is_at_end, background=background)
+                    else:
+                        out= await self._run(*tokenizer.tokenize_args(cmd), input=last_output,mask_input=not is_at_end, background=background)
+                except Exception as e:
+                    traceback.throw(e.args[0])
+                    return
+                
+            last_input = None
+            if isinstance(out, CommandTask):
+                last_output = out.ctx.output
+                last_output._terminal = False
 
-        last_input = None
-        if isinstance(out, CommandTask):
-            last_output = out.ctx.output
-            last_output._terminal = False
-
-            for tk in other_tasks: #link all the tasks
-                out.link_task(tk)
-                tk.ctx.input = last_input
-                last_input = tk.ctx.output
+                for tk in other_tasks: #link all the tasks
+                    out.link_task(tk)
+                    tk.ctx.input = last_input
+                    last_input = tk.ctx.output
+                
+                out.ctx.input= last_input # type: ignore
+                return out
             
-            out.ctx.input= last_input # type: ignore
-            return out
-        
-        return None
+            return None
+        except Exception as e:
+            traceback.throw(e.args[0])
 
-    async def cleanup(self):
+    def cleanup(self):
         '''Removes any complete tasks. Should be handled, but this is a fallback.'''
         self._tasks = [m for m in self._tasks if not m.task.done()]
     
@@ -113,6 +119,7 @@ class CommandManager:
         def on_task_finish(t: asyncio.Task):
             nonlocal task
 
+            self.cleanup()
             #Clean up CTXs
             if task.ctx.output is not None:
                 task.ctx.output.close()
