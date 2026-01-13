@@ -2,6 +2,8 @@ from printdb.api import *
 import re
 from datetime import datetime
 
+from printdb.parsing import tokenizer
+
 @manager.command("welcome", author="moakdoge")
 async def welcome(ctx: CommandContext):
     '''Welcomes you. Ported from printdb v1.'''
@@ -60,7 +62,7 @@ async def welcome(ctx: CommandContext):
     output.append(border)
 
     await ctx.pprint("\n".join(output))
-    
+
 @manager.command("grep", author="moakdoge")
 async def grep(ctx:CommandContext, pattern: str, file:Path = None, input:str = ""): # type: ignore
     '''Search for a pattern in an input or files. 
@@ -82,3 +84,16 @@ async def grep(ctx:CommandContext, pattern: str, file:Path = None, input:str = "
             results+=1
     if results < 1:
         await ctx.pprint("[[red]]grep: no results found")
+
+@manager.command("time", author="moakdoge")
+async def time(ctx: CommandContext, c: str):
+    import time
+    f=""
+    start = time.time()
+
+    cmd, args = tokenizer.tokenize_args(c)
+    #TODO: make a better api then relying on _run
+    t = await manager._run(cmd, args, background=False)
+    await t.task
+    end = time.time()
+    await ctx.pprint(f"Command {1} took {end - start:.4f}s.")
