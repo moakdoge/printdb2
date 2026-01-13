@@ -31,7 +31,7 @@ async def welcome(ctx: CommandContext):
     lines = [
         f"Welcome, @[[red]]moakdoge[[reset]]!",
         f"Today is [[cyan]]{now:%Y/%m/%d}[[reset]] [[white]]and it's currently[[reset]] [[cyan]]{now:%H:%M:%S}[[reset]]",
-        f"Currently, there are [[yellow]]{len(manager.get_commands())}[[reset]] commands loaded.",
+        f"Currently, there are [[fg red]]{len(manager.get_commands())}[[reset]] commands loaded.",
         "[dash]",
         f"Aliases: [[magenta]]{len(manager.get_command_names())- len(manager.get_commands())}[[reset]]",
         f"Uptime: [[cyan]]{fmt_time(runtime)}[[reset]]",
@@ -87,6 +87,9 @@ async def grep(ctx:CommandContext, pattern: str, file:Path = None, input:str = "
 
 @manager.command("time", author="moakdoge")
 async def time(ctx: CommandContext, c: str):
+    '''
+        Times a command.
+    '''
     import time
     f=""
     start = time.time()
@@ -94,6 +97,10 @@ async def time(ctx: CommandContext, c: str):
     cmd, args = tokenizer.tokenize_args(c)
     #TODO: make a better api then relying on _run
     t = await manager._run(cmd, args, background=False)
-    await t.task
+    if t is None:
+        await ctx.pprint(f"[[red]]Failed to run command!")
+        return
+    
+    await t.task # type: ignore
     end = time.time()
     await ctx.pprint(f"Command {1} took {end - start:.4f}s.")
