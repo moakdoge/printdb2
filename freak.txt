@@ -1,0 +1,105 @@
+    [1m[36mcat:[0m
+        [31m[1mArgs:[0m[36m
+ 		file: [33mPath[36m [32m(optional)[36m
+		content: [33mstr[36m [32m(optional)[36m
+        [31m[1mAuthor:[0m[36m moakdoge
+        [31m[1mAliases:[0m[36m N/A
+        [31m[1mDescription:[0m[36m Reads out the contents of a file / string to print.
+
+    [1m[36moutput:[0m
+        [31m[1mArgs:[0m[36m
+ 
+        [31m[1mAuthor:[0m[36m moakdoge
+        [31m[1mAliases:[0m[36m N/A
+        [31m[1mDescription:[0m[36m Echos back anything being sent to the pipe
+
+    [1m[36myes:[0m
+        [31m[1mArgs:[0m[36m
+ 
+        [31m[1mAuthor:[0m[36m moakdoge
+        [31m[1mAliases:[0m[36m N/A
+        [31m[1mDescription:[0m[36m Constantly sends a stream of yesses until killed
+
+    [1m[36mecho:[0m
+        [31m[1mArgs:[0m[36m
+ 		args: [33mstr[36m
+        [31m[1mAuthor:[0m[36m moakdoge
+        [31m[1mAliases:[0m[36m N/A
+        [31m[1mDescription:[0m[36m Repeats any file, argument, or pipe input passed in.
+
+    [1m[36mls:[0m
+        [31m[1mArgs:[0m[36m
+ 		hidden: [33mbool[36m [32m(optional)[36m
+        [31m[1mAuthor:[0m[36m moakdoge
+        [31m[1mAliases:[0m[36m dir
+        [31m[1mDescription:[0m[36m Prints all files in the current directory.
+
+    [1m[36mcd:[0m
+        [31m[1mArgs:[0m[36m
+ 		path: [33mPath[36m
+        [31m[1mAuthor:[0m[36m moakdoge
+        [31m[1mAliases:[0m[36m N/A
+        [31m[1mDescription:[0m[36m N/A
+
+    [1m[36mhelp:[0m
+        [31m[1mArgs:[0m[36m
+ 		command: [33mstr[36m [32m(optional)[36m
+        [31m[1mAuthor:[0m[36m moakdoge
+        [31m[1mAliases:[0m[36m N/A
+        [31m[1mDescription:[0m[36m Provides a list of every command and details about them.
+
+    [1m[36mwait:[0m
+        [31m[1mArgs:[0m[36m
+ 		seconds: [33mfloat[36m
+        [31m[1mAuthor:[0m[36m moakdoge
+        [31m[1mAliases:[0m[36m N/A
+        [31m[1mDescription:[0m[36m Waits a certain amount of seconds.
+
+    [1m[36mexit:[0m
+        [31m[1mArgs:[0m[36m
+ 		exit_code: [33mint[36m [32m(optional)[36m
+        [31m[1mAuthor:[0m[36m moakdoge
+        [31m[1mAliases:[0m[36m N/A
+        [31m[1mDescription:[0m[36m Immediately exits using the exit code provided.
+
+    [1m[36mtask:[0m
+        [31m[1mArgs:[0m[36m
+ 		mode: [33mstr[36m [32m(optional)[36m
+		target: [33mstr[36m [32m(optional)[36m
+        [31m[1mAuthor:[0m[36m moakdoge
+        [31m[1mAliases:[0m[36m N/A
+        [31m[1mDescription:[0m[36m Allows you to manage tasks.
+		mode: must be list/stop/info
+		target: all OR a specific proccess ID
+
+    [1m[36mtest-exception:[0m
+        [31m[1mArgs:[0m[36m
+ 		message: [33mstr[36m [32m(optional)[36m
+        [31m[1mAuthor:[0m[36m moakdoge
+        [31m[1mAliases:[0m[36m N/A
+        [31m[1mDescription:[0m[36m N/A
+
+    [1m[36mwelcome:[0m
+        [31m[1mArgs:[0m[36m
+ 
+        [31m[1mAuthor:[0m[36m moakdoge
+        [31m[1mAliases:[0m[36m N/A
+        [31m[1mDescription:[0m[36m Welcomes you. Ported from printdb v1.
+
+    [1m[36mgrep:[0m
+        [31m[1mArgs:[0m[36m
+ 		pattern: [33mstr[36m
+		file: [33mPath[36m [32m(optional)[36m
+		input: [33mstr[36m [32m(optional)[36m
+        [31m[1mAuthor:[0m[36m moakdoge
+        [31m[1mAliases:[0m[36m N/A
+        [31m[1mDescription:[0m[36m Search for a pattern in an input or files. 
+		Example: grep pattern file.txt
+
+    [1m[36mtime:[0m
+        [31m[1mArgs:[0m[36m
+ 		c: [33mstr[36m
+        [31m[1mAuthor:[0m[36m moakdoge
+        [31m[1mAliases:[0m[36m N/A
+        [31m[1mDescription:[0m[36m Times a command.
+

@@ -97,7 +97,10 @@ class AutofillRule():
         '''Use %s as s'''
         def replace_regex(t):
             def repl(match):
-                return colorize(replacement % match.group(0))
+                if "%s" in replacement:
+                    return colorize(replacement % match.group(0))
+                else:
+                    return colorize(replacement)
             return re.sub(regex, repl, t)
         if at_end:
             return AutofillRule(on_send=replace_regex)
@@ -229,9 +232,6 @@ async def input(prompt: str, history: list[str] | None = None, rules: list[Autof
             cursor += len(char)
 
         # RENDER FRAME
-
-        
-
         display = (
             typed[:cursor] +(typed[cursor] if cursor < len(typed) else " ")+
             typed[cursor + (1 if cursor < len(typed) else 0):]
@@ -241,7 +241,7 @@ async def input(prompt: str, history: list[str] | None = None, rules: list[Autof
         new_disp = ""
         for index, l in enumerate(display):
             if index == cursor:
-                new_disp+=f"[[inverse]]{l}[[reset]]"
+                new_disp+=f"[[inverse]]{l}[[no inverse]]"
             else:
                 new_disp+=l
             
@@ -253,5 +253,8 @@ async def input(prompt: str, history: list[str] | None = None, rules: list[Autof
         stdout.write("\r" + out + "\x1b[K")
         old_len = len(out)
         stdout.flush()
+    for rule in rules:
+        if rule.on_send is not None:
+            typed = rule.on_send(typed)
     return typed
 

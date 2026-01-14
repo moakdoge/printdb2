@@ -16,7 +16,8 @@ manager.load_plugin_folder(f"{resource_path("plugins")}")
 autofill_rules = [
     AutofillRule.regex(r'(?<!")\b\d+(?:\.\d+)?\b(?!")(?=(?:[^"]*"[^"]*")*[^"]*$)', "[[red]]%s[[reset]]",at_end=False),
     AutofillRule.autofill(manager.get_command_names()),
-    AutofillRule.replace(manager.get_command_names(), "[[green]]%s[[reset]]", replace_text=False)
+    AutofillRule.replace(manager.get_command_names(), "[[bold]]%s[[reset]]", replace_text=False),
+    AutofillRule.regex(r'"(?:\\.|[^"\\])*"',"[[yellow]]%s[[reset]]", at_end=False),
 ]
 
 ON_INPUT= False

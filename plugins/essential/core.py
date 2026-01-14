@@ -30,8 +30,8 @@ async def welcome(ctx: CommandContext):
 
     lines = [
         f"Welcome, @[[red]]moakdoge[[reset]]!",
-        f"Today is [[cyan]]{now:%Y/%m/%d}[[reset]] [[white]]and it's currently[[reset]] [[cyan]]{now:%H:%M:%S}[[reset]]",
-        f"Currently, there are [[fg red]]{len(manager.get_commands())}[[reset]] commands loaded.",
+        f"Today is [[cyan]]{now:%Y/%m/%d} [[reset]][[white]]and it's currently[[reset]] [[cyan]]{now:%H:%M:%S}[[reset]]",
+        f"Currently, there are {len(manager.get_commands())}[[reset]] commands loaded.",
         "[dash]",
         f"Aliases: [[magenta]]{len(manager.get_command_names())- len(manager.get_commands())}[[reset]]",
         f"Uptime: [[cyan]]{fmt_time(runtime)}[[reset]]",
