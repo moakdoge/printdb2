@@ -89,3 +89,20 @@ async def control_tasks(ctx: CommandContext, mode: str = "", target: str = "all"
 async def test_exception(ctx: CommandContext, message: str = "Example execption raised by test-exception"):
     raise Exception(message)
     return CommandOutput(ErrorCode.SUCCESS)
+
+@manager.command("exec", author="moakdoge")
+async def execute(ctx: CommandContext, file: Path):
+    '''Executes the commands inside of a file.'''
+    file = file.expanduser()
+    if not file.exists():
+        raise FileNotFoundError(file)
+    await manager.run_file(file)
+    
+@manager.command(name="update-config", author="moakdoge", aliases=["update-configuration", "update-conf"])
+async def update_conf(ctx: CommandContext):
+    '''Refreshes your prefetch.'''
+    file = manager.get_prefetch()
+    file = file.expanduser()
+    if not file.exists():
+        raise FileNotFoundError(file)
+    await manager.run_file(file)
