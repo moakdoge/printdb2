@@ -1,4 +1,5 @@
 import importlib.util
+from pathlib import Path
 from types import ModuleType
 
 import printdb
@@ -61,11 +62,16 @@ class CommandManager:
 
 
     async def run(self, cmd: str, add_to_history: bool = True) -> CommandTask | None:
+
         try:
             #checks for whitespace
             if cmd.strip().replace(" ", "") == "":
                 return
                 
+            #checks if its a command
+            if cmd.strip().startswith("#"):
+                return 
+            
             if add_to_history:
                 self._command_history.append(cmd)
 
@@ -227,3 +233,34 @@ class CommandManager:
             if command.name == cmd:
                 return command
         return None
+    
+    def get_prefetch(self) -> Path:
+        home = Path.home() / "printdb.cmd"
+        if not home.exists():
+            home.write_text("# This is your printdb command file; think of it as .bashrc for bash.\nwelcome")
+        return home
+
+    async def run_file(self, fi: Path):
+        if not fi.exists():
+            raise FileNotFoundError(fi)
+        
+        #attempt to split by line
+        text = fi.read_text()
+        lines = text.splitlines()
+
+        result = []
+        current = ""
+
+        for line in lines:
+            stripped = line.rstrip()
+
+            if stripped.endswith("\\"):
+                current += stripped[:-1] + " "
+            else:
+                current += line
+                result.append(current)
+                current = ""
+
+        result = [r for r in result if r.strip("") != ""]
+        for command in result:
+            await self.run(command, False)

@@ -25,18 +25,18 @@ async def welcome(ctx: CommandContext):
         s = sec % 60
         return f"{h:02}:{m:02}:{s:05.2f}"
 
-    runtime = time.time()
+
     now = datetime.now()
 
     lines = [
-        f"Welcome, @[[red]]moakdoge[[reset]]!",
+        f"Welcome, [[red]]@moakdoge[[reset]]!",
         f"Today is [[cyan]]{now:%Y/%m/%d} [[reset]][[white]]and it's currently[[reset]] [[cyan]]{now:%H:%M:%S}[[reset]]",
         f"Currently, there are {len(manager.get_commands())}[[reset]] commands loaded.",
         "[dash]",
         f"Aliases: [[magenta]]{len(manager.get_command_names())- len(manager.get_commands())}[[reset]]",
-        f"Uptime: [[cyan]]{fmt_time(runtime)}[[reset]]",
+        f"Configuration: [[magenta]]{manager.get_prefetch().absolute()}[[reset]]",
         "[dash]",
-        "Thanks for using [[yellow]]printdb[[bold]]v2[[reset]][[yellow]]![[reset]]",
+        f"Thanks for using [[yellow]]printdb [[bold]]v{version}[[reset]][[yellow]]![[reset]]",
     ]
 
     max_width = max(

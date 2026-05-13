@@ -81,7 +81,7 @@ def colorize(text: str) -> str:
                     return randomized_text(int(tag.removeprefix("random").strip().replace("_","").replace(" ","")))
                 except ValueError:
                     return randomized_text(int(12))
-            elif tag.startswith("delay"):
+            elif tag.startswith("delay"): #idk who thought of this lmao
                 try:
                     time.sleep(float(tag.removeprefix("delay").strip().replace("_","").replace(" ","")))
                     return ""

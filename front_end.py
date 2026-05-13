@@ -11,7 +11,8 @@ def resource_path(rel_path: str) -> str:
         base = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base, rel_path)
 manager.load_plugin_folder(f"{resource_path("plugins")}")
-
+prefetch = manager.get_prefetch()
+FIRST_RUN = True
 autofill_rules = [
     AutofillRule.regex(r'(?<!")\b\d+(?:\.\d+)?\b(?!")(?=(?:[^"]*"[^"]*")*[^"]*$)', "[[red]]%s[[reset]]",at_end=False),
     AutofillRule.autofill(manager.get_command_names()),
@@ -21,6 +22,10 @@ autofill_rules = [
 
 ON_INPUT= False
 async def main():
+    global FIRST_RUN
+    if FIRST_RUN:
+        await manager.run_file(manager.get_prefetch())
+        FIRST_RUN = False
     await manager.stop()
     global ON_INPUT
     while True:
@@ -38,6 +43,7 @@ if __name__ == "__main__":
     asyncio.set_event_loop(loop)
     while True:
         try:
+            
             loop.run_until_complete(main())
         except KeyboardInterrupt:
             if ON_INPUT:

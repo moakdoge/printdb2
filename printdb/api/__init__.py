@@ -9,5 +9,8 @@ from .operating_system import OSLib
 from pathlib import Path
 import asyncio
 from printdb.core.args import Arg
+import printdb.api._versioning as _ver
 manager: CommandManager = CommandManager()
 delay = asyncio.sleep
+#attempt to dynamically pull version if it can
+version = _ver._get_version()
