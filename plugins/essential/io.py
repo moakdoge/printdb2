@@ -17,7 +17,8 @@ async def output(ctx: CommandContext):
     last_log = ""
     while True:
         o = await ctx.input.read()
-        print(o)
+        await ctx.print(f"reading: {o}")
+        await delay(0.1)
 
 @manager.command("yes", author="moakdoge")
 async def yes(ctx:CommandContext):

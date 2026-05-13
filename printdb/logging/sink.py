@@ -16,11 +16,10 @@ class LogSink:
     async def write(self, data: str):
 
         await self._queue.put(data)
-
         if self._file is not None:
             self._file.write(data)
             self._file.flush()
-        elif self._terminal:
+        elif self._terminal is True:
             print(data,end="")
 
 

@@ -2,6 +2,7 @@ import importlib.util
 from types import ModuleType
 
 import printdb
+from printdb.logging.sink import LogSink
 from . import command, context, command_output
 from printdb.logging import traceback
 from .command_output import ErrorCode
@@ -76,40 +77,33 @@ class CommandManager:
             out = None
             pipes_count = len(pipes) - 1
             other_tasks = []
+            _tmp_outs: list[CommandTask] = []
             last_output = None
+            _pipes = pipes_count > 0
 
             for _, cmd in enumerate(pipes):
                 is_at_end = (_ >= pipes_count)
-                
-                last_output = None
+                b=background or (not is_at_end and pipes_count > 0)
                 if out is not None:
                     last_output=out.ctx.output
                     other_tasks.append(out)
                 try:
                     if redirect_mode is not None and redirect_file is not None:
-                        out= await self._run(*tokenizer.tokenize_args(command), redirect_file=redirect_file, redirect_mode=redirect_mode, input=last_output, mask_input=not is_at_end, background=background)
+                        out= await self._run(*tokenizer.tokenize_args(cmd), redirect_file=redirect_file, redirect_mode=redirect_mode, input=last_output, mask_input=not is_at_end, background=background)
                     else:
-                        out= await self._run(*tokenizer.tokenize_args(cmd), input=last_output,mask_input=not is_at_end, background=background)
+                        out= await self._run(*tokenizer.tokenize_args(cmd), input=last_output,mask_input=not is_at_end, background=b, piped=_pipes and is_at_end, linked_tasks = _tmp_outs if (_pipes and is_at_end) else None)
+                    _tmp_outs.append(out)
+                    if b and pipes_count > 0:
+                        last_output = out.ctx.output # type: ignore         
                 except Exception as e:
                     traceback.throw(e.args[0])
                     return
-                
-            last_input = None
-            if isinstance(out, CommandTask):
-                last_output = out.ctx.output
-                last_output._terminal = False
 
-                for tk in other_tasks: #link all the tasks
-                    out.link_task(tk)
-                    tk.ctx.input = last_input
-                    last_input = tk.ctx.output
-                
-                out.ctx.input= last_input # type: ignore
-                return out
-            
             return None
         except Exception as e:
             traceback.throw(e.args[0])
+        
+        
 
     def cleanup(self):
         '''Removes any complete tasks. Should be handled, but this is a fallback.'''
@@ -141,9 +135,12 @@ class CommandManager:
 
         task.task.add_done_callback(on_task_finish)
 
-    async def _spawn(self, command: Command, ctx: context.CommandContext, foreground=False, args: tuple = ()):
+    async def _spawn(self, command: Command, ctx: context.CommandContext, foreground=False, args: tuple = (), link: list[CommandTask] | None = None):
         task=asyncio.create_task(command.func(ctx, *args)) #create a task by calling this function
         new_task = CommandTask(command, ctx, task)
+        if link:
+            for tk in link:
+                new_task.link_task(tk)
         
         #register it
         await self._track_task(new_task)
@@ -155,7 +152,7 @@ class CommandManager:
 
     async def stop(self) -> bool:
         if self._fore is not None:
-            self._fore.task.cancel()
+            await self._fore.stop()
             self._fore = None
             return True
         else:
@@ -164,8 +161,8 @@ class CommandManager:
         return False
         
     async def stop_all(self):
-        for task in self._tasks:
-            task.task.cancel()
+        for task in self._tasks[:]:
+            await task.stop()
     
     async def kill(self, task_id: str) -> bool:
         for task in self._tasks:
@@ -174,7 +171,7 @@ class CommandManager:
                 return True
         return False
 
-    async def _run(self, cmd: str, args, redirect_file = None, redirect_mode = None, input=None, mask_input = False, background=False) -> CommandTask | None:
+    async def _run(self, cmd: str, args, redirect_file = None, redirect_mode = None, input=None, mask_input = False, background=False, piped: bool = False, linked_tasks: list[CommandTask] | None = None) -> CommandTask | None:
         '''
             DO NOT CALL! call the normal run instead, unless you are a plugin trying to run a command manually.
         '''
@@ -199,21 +196,24 @@ class CommandManager:
                 #Attempt to run command
                 try:
                     args = args or ()
-                    command_context.input._terminal = True
+                    command_context.input._terminal = not piped
                     command_context.output._terminal = (not mask_input)
-                    
+
                     #allows starting.. should be removed
                     if input is not None:
                         import printdb.logging.sink as snk
                         if not isinstance(input, snk.LogSink):
                             await command_context.input.write(input)
                     
+                    #link tasks
+                    
 
+                            
                     if background:
                         print(f"[{len(self._tasks)} / inf]: {cmd}")
-                        return await self._spawn(command, command_context, foreground=False, args=args) # type: ignore
+                        return await self._spawn(command, command_context, foreground=False, args=args, link=linked_tasks) # type: ignore
                     else:
-                        return await self._spawn(command, command_context, foreground=True, args=args) #type: ignore
+                        return await self._spawn(command, command_context, foreground=True, args=args, link=linked_tasks) #type: ignore
                 
                 except Exception as e:
                     print(traceback.trace_error(e))

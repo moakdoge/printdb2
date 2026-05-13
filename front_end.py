@@ -1,7 +1,6 @@
 from printdb.api import manager, ErrorCode
 from printdb.api.frontend import tokenizer, colorize, input_prompt
 import readline,os,asyncio
-from aioconsole import ainput
 from printdb.input.async_input import input, AutofillRule
 import sys
 
