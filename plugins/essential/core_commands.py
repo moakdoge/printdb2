@@ -1,9 +1,12 @@
+from typing import Annotated, Literal
+
 import os_utils
 
 from printdb.api import *
 import sys
 
 from printdb.core.command_task import CommandTask
+from printdb.typingutils.co import clean_tp
 @manager.command("help", author="moakdoge")
 async def help(ctx: CommandContext, command: str = ""):
     '''
@@ -20,7 +23,7 @@ async def help(ctx: CommandContext, command: str = ""):
             args = cmd.details.args
             pretty_args = []
             for arg in args:
-                pretty_args.append(f"\t\t{arg.name}: [[yellow]]{arg.type.__name__}[[cyan]]{" [[green]](optional)[[cyan]]" if arg.optional else ""}")
+                pretty_args.append(f"\t\t{arg.name}: [[yellow]]{clean_tp(arg.type)}[[cyan]]{" [[green]](optional)[[cyan]]" if arg.optional else ""}")
             await ctx.pprint(f"[[bold]][[cyan]]{cmd.command}:[[reset]]", tabs=1)
             await ctx.pprint(f"[[red]][[bold]]Args:[[reset]][[cyan]]\n {"\n".join(pretty_args)}",tabs=2)
             await ctx.pprint(f"[[red]][[bold]]Author:[[reset]][[cyan]] {aut}",tabs=2)
@@ -99,6 +102,11 @@ async def execute(ctx: CommandContext, file: Path):
     if not file.exists():
         raise FileNotFoundError(file)
     await manager.run_file(file)
+    
+    
+@manager.command(name="test", author="moakdoge")
+async def _test(ctx: CommandContext, a: Annotated[Literal["x", "y"] | int, "testing annotated"]):
+    await ctx.pprint(f"[[red]]Type:[[reset]]{type(a)}; value:{a}") 
     
 @manager.command(name="config", author="moakdoge", aliases=["configuration", "conf"])
 async def update_conf(ctx: CommandContext, options: str = "refresh"):

@@ -6,6 +6,9 @@ import json5
 from printdb.core.command import Command
 from typing import Any
 
+from printdb.typingutils import isinst
+from printdb.typingutils.co import clean_tp, convert_value
+
 
 def convert_str(s: str):
     nones = ["none", "null", "NaN"]
@@ -89,10 +92,13 @@ def type_check_args(command: Command, args: list) -> list[Any]:
         if variadic:
             new = []
             for arg in provided[ai:]:
-                if isinstance(arg, annotation):
+                if isinst(arg, annotation):
                     new.append(arg)
                 else:
-                    raise InvalidParamType(f"Arg {arg} is not a valid type for annotation {annotation}")
+                    try:
+                        new.append(convert_value(arg, annotation))
+                    except Exception as e:
+                        raise InvalidParamType(f"Arg {arg} is not a valid type for annotation {annotation}")
             typed.extend(new)
             ai = len(provided)
             break
@@ -107,16 +113,19 @@ def type_check_args(command: Command, args: list) -> list[Any]:
         val = provided[ai]
 
         try:
-            if not isinstance(val, annotation):
-                if default is inspect._empty:
-                    raise InvalidParamType(
-                        f"Argument '{name}' expected {annotation.__name__}, "
-                        f"got {type(val).__name__} ({val})"
-                    )
-                else:  # optional param
-                    pi += 1
-                    typed.append(default)
-                    continue
+            if not isinst(val, annotation):
+                try:
+                    val = convert_value(val, annotation)
+                except Exception as e:
+                    if default is inspect._empty:
+                        raise InvalidParamType(
+                            f"Argument '{name}' expected {clean_tp(annotation)}, "
+                            f"got {clean_tp(type(val))} ({val})"
+                        )
+                    else:  # optional param
+                        pi += 1
+                        typed.append(default)
+                        continue
         except TypeError as e:
             pass
 
