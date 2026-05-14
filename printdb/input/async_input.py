@@ -160,98 +160,102 @@ async def input(prompt: str, history: list[str] | None = None, rules: list[Autof
                 if letter in ("A", "B", "C", "D"):
                     return new + part2 + letter
         return char
-    while True:
-        char = await get_character()
-        for rule in rules:
-            if rule.text_replacement and rule.on_char is not None:
-                old_t = len(typed)
-                if not rule.on_tab:
-                    typed = rule.on_char(typed)
-                elif rule.on_tab and char == "\t":
-                    typed = rule.on_char(typed)
-                    char = ""
-
-                if len(typed) - old_t > 0:
-                    if rule.cancel:
+    try:
+        while True:
+            char = await get_character()
+            for rule in rules:
+                if rule.text_replacement and rule.on_char is not None:
+                    old_t = len(typed)
+                    if not rule.on_tab:
+                        typed = rule.on_char(typed)
+                    elif rule.on_tab and char == "\t":
+                        typed = rule.on_char(typed)
                         char = ""
-                    cursor += len(typed) + old_t
-        if char == "\x1b[A": #UP
-            ind -= 1
-            if ind < 0:
-                ind = 0
-            if (ind > -1 and ind < len(history)):
-                cursor = 9999999999999
-                typed = history[ind]
-            char = ""
-        if char == "\x1b[B": #DOWN
-            ind += 1
-            if ind > len(history):
-                ind = len(history)
-            if ind == len(history):
-                typed = ""        # blank line after last history item
-            else:
+
+                    if len(typed) - old_t > 0:
+                        if rule.cancel:
+                            char = ""
+                        cursor += len(typed) + old_t
+            if char == "\x1b[A": #UP
+                ind -= 1
+                if ind < 0:
+                    ind = 0
                 if (ind > -1 and ind < len(history)):
-                    cursor = 9999999999999999
+                    cursor = 9999999999999
                     typed = history[ind]
-            char = ""
+                char = ""
+            if char == "\x1b[B": #DOWN
+                ind += 1
+                if ind > len(history):
+                    ind = len(history)
+                if ind == len(history):
+                    typed = ""        # blank line after last history item
+                else:
+                    if (ind > -1 and ind < len(history)):
+                        cursor = 9999999999999999
+                        typed = history[ind]
+                char = ""
 
-        if cursor > len(typed):
-            cursor = len(typed)
-
-        if char == "\x1b[C": #RIGHT
-            cursor += 1
             if cursor > len(typed):
                 cursor = len(typed)
-            char = ""
-        if char == "\x1b[D": #LEFT:
-            cursor -=1 
-            if cursor < 0:
-                cursor = 0
-            char = ""
-        # ENTER
-        if char in ("\r", "\n"):
-            for rule in rules:
-                if rule.on_char is not None:
-                    display = colorize(rule.on_char(display))
-                if rule.on_send is not None:
-                    display = rule.on_send(display)
-            stdout.write("\r" + prompt + display + "\x1b[K")
-            stdout.write("\x1b[?25h\n")  # show cursor and newline
-            stdout.flush()
-            break
 
-        # BACKSPACE
-        if char in ("\x08", "\x7f"):
-            if cursor > 0:
-                typed = typed[:cursor-1] + typed[cursor:]
-                cursor -= 1
+            if char == "\x1b[C": #RIGHT
+                cursor += 1
+                if cursor > len(typed):
+                    cursor = len(typed)
+                char = ""
+            if char == "\x1b[D": #LEFT:
+                cursor -=1 
+                if cursor < 0:
+                    cursor = 0
+                char = ""
+            # ENTER
+            if char in ("\r", "\n"):
+                for rule in rules:
+                    if rule.on_char is not None:
+                        display = colorize(rule.on_char(display))
+                    if rule.on_send is not None:
+                        display = rule.on_send(display)
+                stdout.write("\r" + prompt + display + "\x1b[K")
+                stdout.write("\x1b[?25h\n")  # show cursor and newline
+                stdout.flush()
+                break
 
-        # INSERT NORMAL CHAR
-        else:
-            typed = typed[:cursor] + char + typed[cursor:]
-            cursor += len(char)
+            # BACKSPACE
+            if char in ("\x08", "\x7f"):
+                if cursor > 0:
+                    typed = typed[:cursor-1] + typed[cursor:]
+                    cursor -= 1
 
-        # RENDER FRAME
-        display = (
-            typed[:cursor] +(typed[cursor] if cursor < len(typed) else " ")+
-            typed[cursor + (1 if cursor < len(typed) else 0):]
-        )
-
-
-        new_disp = ""
-        for index, l in enumerate(display):
-            if index == cursor:
-                new_disp+=f"[[inverse]]{l}[[no inverse]]"
+            # INSERT NORMAL CHAR
             else:
-                new_disp+=l
-            
+                typed = typed[:cursor] + char + typed[cursor:]
+                cursor += len(char)
 
-        for rule in rules:
-            if rule.on_char != None:
-                new_disp = rule.on_char(new_disp)
-        out = prompt + colorize(new_disp)
-        stdout.write("\r" + out + "\x1b[K")
-        old_len = len(out)
+            # RENDER FRAME
+            display = (
+                typed[:cursor] +(typed[cursor] if cursor < len(typed) else " ")+
+                typed[cursor + (1 if cursor < len(typed) else 0):]
+            )
+
+
+            new_disp = ""
+            for index, l in enumerate(display):
+                if index == cursor:
+                    new_disp+=f"[[inverse]]{l}[[no inverse]]"
+                else:
+                    new_disp+=l
+                
+
+            for rule in rules:
+                if rule.on_char != None:
+                    new_disp = rule.on_char(new_disp)
+            out = prompt + colorize(new_disp)
+            stdout.write("\r" + out + "\x1b[K")
+            old_len = len(out)
+            stdout.flush()
+    finally:
+        stdout.write("\x1b[?25h")
         stdout.flush()
     for rule in rules:
         if rule.on_send is not None:

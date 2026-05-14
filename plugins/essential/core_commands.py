@@ -1,3 +1,5 @@
+import os_utils
+
 from printdb.api import *
 import sys
 
@@ -98,11 +100,29 @@ async def execute(ctx: CommandContext, file: Path):
         raise FileNotFoundError(file)
     await manager.run_file(file)
     
-@manager.command(name="update-config", author="moakdoge", aliases=["update-configuration", "update-conf"])
-async def update_conf(ctx: CommandContext):
-    '''Refreshes your prefetch.'''
+@manager.command(name="config", author="moakdoge", aliases=["configuration", "conf"])
+async def update_conf(ctx: CommandContext, options: str = "refresh"):
+    '''Changes setting about your configuration'''
+ 
     file = manager.get_prefetch()
-    file = file.expanduser()
-    if not file.exists():
-        raise FileNotFoundError(file)
-    await manager.run_file(file)
+    match options:
+        case "refresh":
+            file = file.expanduser()
+            if not file.exists():
+                raise FileNotFoundError(file)
+            await manager.run_file(file)
+        case "delete":
+            OSLib.remove_file(file)
+            await ctx.pprint(f"Deleted file [[magenta]]{file.absolute()}[[reset]] successfully.")
+        case "create":
+            OSLib.remove_file(file)
+            manager.get_prefetch() #creates a prefetch
+            await ctx.pprint(f"Recreated file [[magenta]]{file.absolute()}[[reset]] successfully.")
+        case "open":
+            await OSLib.open(file)
+        case "watch":
+            async with OSLib.watch_file(file, full=True) as file:
+                pass
+            await manager.run_file(file)
+        case _:
+            return CommandOutput(ErrorCode.GENERIC_ERROR, f"Please choose a valid type: refresh, delete, create, open.")

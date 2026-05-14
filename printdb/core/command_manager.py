@@ -71,9 +71,14 @@ class CommandManager:
             #checks if its a command
             if cmd.strip().startswith("#"):
                 return 
+
+            #strips out commands entirely
+            
             
             if add_to_history:
                 self._command_history.append(cmd)
+                
+            cmd = argparser.strip_comments(cmd)
 
             #tokenize into pipes and redirects
             command,redirect_mode,redirect_file = tokenizer.tokensize_redirects(cmd)
@@ -82,7 +87,7 @@ class CommandManager:
 
             out = None
             pipes_count = len(pipes) - 1
-            other_tasks = []
+            other_tasks: list[CommandTask] = []
             _tmp_outs: list[CommandTask] = []
             last_output = None
             _pipes = pipes_count > 0
@@ -94,16 +99,24 @@ class CommandManager:
                     last_output=out.ctx.output
                     other_tasks.append(out)
                 try:
-                    if redirect_mode is not None and redirect_file is not None:
-                        out= await self._run(*tokenizer.tokenize_args(cmd), redirect_file=redirect_file, redirect_mode=redirect_mode, input=last_output, mask_input=not is_at_end, background=background)
-                    else:
-                        out= await self._run(*tokenizer.tokenize_args(cmd), input=last_output,mask_input=not is_at_end, background=b, piped=_pipes and is_at_end, linked_tasks = _tmp_outs if (_pipes and is_at_end) else None)
-                    _tmp_outs.append(out)
+                    if is_at_end:
+                        for task in other_tasks:
+                            task.ctx.output._terminal = False
+                    out= await self._run(*tokenizer.tokenize_args(cmd), 
+                                         input=last_output,
+                                         mask_input=not is_at_end, 
+                                         background=b, 
+                                         piped=_pipes and is_at_end, 
+                                         linked_tasks = other_tasks if (_pipes and is_at_end) else None,
+                                         redirect_file=redirect_file if is_at_end else None,
+                                         redirect_mode=redirect_mode if is_at_end else None)
                     if b and pipes_count > 0:
                         last_output = out.ctx.output # type: ignore         
                 except Exception as e:
                     traceback.throw(e.args[0])
                     return
+                
+
 
             return None
         except Exception as e:
@@ -236,8 +249,12 @@ class CommandManager:
     
     def get_prefetch(self) -> Path:
         home = Path.home() / "printdb.cmd"
+        stock = Path(__file__).parent.parent / "STOCK.cmd"
         if not home.exists():
-            home.write_text("# This is your printdb command file; think of it as .bashrc for bash.\nwelcome")
+            if stock.exists():
+                home.write_text(stock.read_text())
+            else:
+                home.write_text("")
         return home
 
     async def run_file(self, fi: Path):

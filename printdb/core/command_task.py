@@ -12,6 +12,7 @@ class CommandTask:
 
     def link_task(self, command_task: "CommandTask"): # type: ignore
         if command_task not in self._linked_tasks:
+            command_task.ctx.output._terminal = False
             self._linked_tasks.append(command_task)
 
     @property

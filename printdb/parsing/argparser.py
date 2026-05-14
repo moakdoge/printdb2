@@ -125,3 +125,36 @@ def type_check_args(command: Command, args: list) -> list[Any]:
         pi += 1
 
     return typed
+def strip_comments(line: str) -> str:
+    in_single = False
+    in_double = False
+    escaped = False
+    out = []
+
+    for ch in line:
+        if escaped:
+            out.append(ch)
+            escaped = False
+            continue
+
+        if ch == "\\":
+            out.append(ch)
+            escaped = True
+            continue
+
+        if ch == "'" and not in_double:
+            in_single = not in_single
+            out.append(ch)
+            continue
+
+        if ch == '"' and not in_single:
+            in_double = not in_double
+            out.append(ch)
+            continue
+
+        if ch == "#" and not in_single and not in_double:
+            break
+
+        out.append(ch)
+
+    return "".join(out).rstrip()
