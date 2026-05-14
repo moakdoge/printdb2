@@ -111,9 +111,8 @@ async def _test(ctx: CommandContext, a: Annotated[Literal["x", "y"] | int, "test
 @manager.command(name="config", author="moakdoge", aliases=["configuration", "conf"])
 async def update_conf(ctx: CommandContext, options: str = "refresh"):
     '''Changes setting about your configuration'''
- 
     file = manager.get_prefetch()
-    match options:
+    match options.lower():
         case "refresh":
             file = file.expanduser()
             if not file.exists():

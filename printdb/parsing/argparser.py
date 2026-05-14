@@ -167,3 +167,7 @@ def strip_comments(line: str) -> str:
         out.append(ch)
 
     return "".join(out).rstrip()
+
+def strip_template(tmp: str) -> str:
+    tmp = tmp[2:-1]
+    return tmp

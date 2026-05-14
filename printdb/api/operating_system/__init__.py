@@ -28,7 +28,7 @@ class OSFunctions():
             subprocess.Popen(["open", file])
 
         else:
-            await self.run("xdg-open", [str(file.absolute())])
+            await self.run("xdg-open", [str(file.absolute())], wait=True)
             
     async def run(self, file: Path | str, args: list[str] | None = None, wait: bool = False) -> Process:
         if isinstance(file, str):

@@ -1,5 +1,6 @@
 import importlib.util
 from pathlib import Path
+import token
 from types import ModuleType
 
 import printdb
@@ -60,7 +61,45 @@ class CommandManager:
                 if os.path.splitext(file)[1] == ".py":
                     self.load_plugin(os.path.join(dirpath, file))
 
+    async def _combine_string(self, cmd: str) -> str:
+        if "${" not in cmd:
+            return cmd
 
+        pieces = tokenizer._extract_embedded(cmd)
+        return await self._combine_pieces(pieces)
+
+
+    async def _combine_pieces(
+        self,
+        pieces: list[tokenizer.EmbeddedToken],
+    ) -> str:
+        parts: list[str] = []
+
+        for token in pieces:
+            if token.type == "text":
+                parts.append(token.contents)
+                continue
+
+            if token.type == "template":
+                inner = await self._combine_pieces(token.contents)
+
+                real, args = tokenizer.tokenize_args(
+                    argparser.strip_template(inner)
+                )
+
+                out = await self._run(
+                    real,
+                    args=args,
+                    mask_input=True,
+                    combine_pieces=False,  # or whatever flag avoids recursion
+                )
+
+                value = "".join(out.ctx.output._copy_queue)  # type: ignore[attr-defined]
+
+                # safer than f'"{value}"'
+                parts.append(repr(value))
+
+        return "".join(parts)
     async def run(self, cmd: str, add_to_history: bool = True) -> CommandTask | None:
 
         try:
@@ -72,16 +111,24 @@ class CommandManager:
             if cmd.strip().startswith("#"):
                 return 
 
-            #strips out commands entirely
-            
+
             
             if add_to_history:
                 self._command_history.append(cmd)
                 
             cmd = argparser.strip_comments(cmd)
-
+            
+            
+            #process tokens
+            cmd = await self._combine_string(cmd)
+                    
             #tokenize into pipes and redirects
             command,redirect_mode,redirect_file = tokenizer.tokensize_redirects(cmd)
+            
+                        
+
+                    
+            
             pipes = tokenizer.tokenize_pipes(cmd)
             background = cmd.endswith("&")
 

@@ -6,7 +6,7 @@ class LogSink:
     def __init__(self, terminal=False):
         self._queue = asyncio.Queue()
         self._closed = False
-
+        self._copy_queue: list[str] = []
         self._file = None
         self._terminal = terminal  # TerminalSink or None
 
@@ -16,6 +16,7 @@ class LogSink:
     async def write(self, data: str):
 
         await self._queue.put(data)
+        self._copy_queue.append(data)
         if self._file is not None:
             self._file.write(data)
             self._file.flush()
