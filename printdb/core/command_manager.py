@@ -61,45 +61,7 @@ class CommandManager:
                 if os.path.splitext(file)[1] == ".py":
                     self.load_plugin(os.path.join(dirpath, file))
 
-    async def _combine_string(self, cmd: str) -> str:
-        if "${" not in cmd:
-            return cmd
-
-        pieces = tokenizer._extract_embedded(cmd)
-        return await self._combine_pieces(pieces)
-
-
-    async def _combine_pieces(
-        self,
-        pieces: list[tokenizer.EmbeddedToken],
-    ) -> str:
-        parts: list[str] = []
-
-        for token in pieces:
-            if token.type == "text":
-                parts.append(token.contents)
-                continue
-
-            if token.type == "template":
-                inner = await self._combine_pieces(token.contents)
-
-                real, args = tokenizer.tokenize_args(
-                    argparser.strip_template(inner)
-                )
-
-                out = await self._run(
-                    real,
-                    args=args,
-                    mask_input=True,
-                    combine_pieces=False,  # or whatever flag avoids recursion
-                )
-
-                value = "".join(out.ctx.output._copy_queue)  # type: ignore[attr-defined]
-
-                # safer than f'"{value}"'
-                parts.append(repr(value))
-
-        return "".join(parts)
+   
     async def run(self, cmd: str, add_to_history: bool = True) -> CommandTask | None:
 
         try:
@@ -120,8 +82,39 @@ class CommandManager:
             
             
             #process tokens
-            cmd = await self._combine_string(cmd)
-                    
+            embedded =tokenizer._extract_embedded(cmd)
+            async def _to_str(token: tokenizer.EmbeddedToken | str, typ: str = "text") -> str | None:
+                if isinstance(token, str):
+                    return token
+                
+                
+            async def _to_list_str(token: list[tokenizer.EmbeddedToken]):
+                ls = []
+                for tok in token:
+                    l = tok.contents
+                    if isinstance(l, list):
+                        l = await _to_list_str(l)
+
+                    if tok.type == "template":
+                        new_st = tok.contents[0].contents #type: ignore will ALWAYS be a str
+                        if not isinstance(new_st, str):
+                            continue
+                        _new, _args = tokenizer.tokenize_args(new_st)
+                        out = await self._run(_new, _args, mask_input=True)
+                        if not out:
+                            continue
+                        ctx = "".join(out.ctx.output._copy_queue)
+                        ls.append(f'"{ctx}"')
+                        continue
+                    st = await _to_str(l, tok.type)
+                    ls.append(st)
+                
+                return "".join(ls)
+        
+            
+            cmd = await _to_list_str(embedded)
+            #print(list)
+            #print(cmd)
             #tokenize into pipes and redirects
             command,redirect_mode,redirect_file = tokenizer.tokensize_redirects(cmd)
             
