@@ -96,14 +96,26 @@ class CommandManager:
                         l = await _to_list_str(l)
 
                     if tok.type == "template":
-                        new_st = tok.contents[0].contents #type: ignore will ALWAYS be a str
-                        if not isinstance(new_st, str):
+                        if isinstance(tok.contents, list):
+                            new_st = await _to_list_str(tok.contents)
+                        else:
+                            new_st = tok.contents
+                        if not isinstance(new_st, str) or new_st.strip() == "":
                             continue
                         _new, _args = tokenizer.tokenize_args(new_st)
                         out = await self._run(_new, _args, mask_input=True)
                         if not out:
                             continue
                         ctx = "".join(out.ctx.output._copy_queue)
+                        if ctx.endswith("\n"):
+                            ctx = ctx[:-1]
+                        ctx = (
+                            ctx.replace("\\", "\\\\")
+                            .replace("\"", "\\\"")
+                            .replace("\n", "\\n")
+                            .replace("\r", "\\r")
+                            .replace("\t", "\\t")
+                        )
                         ls.append(f'"{ctx}"')
                         continue
                     st = await _to_str(l, tok.type)
