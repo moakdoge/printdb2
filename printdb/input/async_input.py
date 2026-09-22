@@ -1,6 +1,7 @@
 import asyncio
 import sys
-from typing import Callable, overload
+from typing import Callable, LiteralString, overload
+from printdb.input.autofillrules import BaseAutofillRule
 from printdb.logging.colors import *
 from printdb.parsing.tokenizer import *
 import printdb.api as api
@@ -263,7 +264,7 @@ async def insert_cursor(full: str, cursor: int) -> str:
     )
 
     
-async def input(prompt: str, history: list[str] | None = None, rules: list[AutofillRule] | None = None):
+async def input(prompt: str, history: list[str] | None = None, rules: list[BaseAutofillRule] | None = None):
     history = history if history is not None else []
     history = [h for h in history if h.strip() != ""]
     rules = rules if rules is not None else []
@@ -301,9 +302,19 @@ async def input(prompt: str, history: list[str] | None = None, rules: list[Autof
 
 
             for rule in rules:
-                if rule.on_char:
-                    if (rule.on_tab and character == "\t") or (not rule.on_tab):
-                        display = colorize(rule.on_char(display))
+
+                raw = "".join(strip_ansi(typed))
+                new_raw = rule.on_raw_character(character, raw)
+                if new_raw is not NotImplemented:
+                    typed = (list(new_raw))
+                    display = await generate_display(typed)
+                    cursor = await handle_cursor(typed, display)
+                    display = await insert_cursor(display, cursor)
+                    
+                output_display = rule.on_character(character, display)
+                if output_display is not NotImplemented:
+                    display = output_display
+                
                         
             stdout.write(f"\r{prompt}{display}")
             last = len(display)
@@ -320,8 +331,9 @@ async def input(prompt: str, history: list[str] | None = None, rules: list[Autof
 
     final = "".join(strip_ansi(typed))
     for rule in rules:
-        if rule.on_send:
-            final = colorize(rule.on_send(final))
+        new = rule.on_send(final)
+        if new is not NotImplemented:
+            final = colorize(new)
 
     return strip_ansi(final)
         

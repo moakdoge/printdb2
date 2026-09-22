@@ -4,6 +4,8 @@ import readline,os,asyncio
 from printdb.input.async_input import input, AutofillRule
 import sys
 
+from printdb.input.autofillrules import HintAutofillRule, RegexAutofillRule
+
 def resource_path(rel_path: str) -> str:
     if hasattr(sys, '_MEIPASS'):  
         base = sys._MEIPASS  # type: ignore
@@ -22,11 +24,11 @@ def test(c):
 
 test_rule.on_char = test
 autofill_rules = [
-    AutofillRule.regex(r'(?<!")\b\d+(?:\.\d+)?\b(?!")(?=(?:[^"]*"[^"]*")*[^"]*$)', "[[red]]%s[[reset]]",at_end=False),
-    AutofillRule.autofill(manager.get_command_names()),
-    AutofillRule.replace(manager.get_command_names(), "[[bold]]%s[[reset]]", replace_text=False),
-    AutofillRule.regex(r'"(?:\\.|[^"\\])*"',"[[yellow]]%s[[reset]]", at_end=False),
-    AutofillRule.ghost(["help"], ["option1", "command1"])
+    RegexAutofillRule(r'(?<!")\b\d+(?:\.\d+)?\b(?!")(?=(?:[^"]*"[^"]*")*[^"]*$)', "[[red]]%s[[reset]]"),
+   # AutofillRule.autofill(manager.get_command_names()),
+   # AutofillRule.replace(manager.get_command_names(), "[[bold]]%s[[reset]]", replace_text=False),
+   # AutofillRule.regex(r'"(?:\\.|[^"\\])*"',"[[yellow]]%s[[reset]]", at_end=False),
+    HintAutofillRule("help", ["option1", "command1"])
 ]
 
 ON_INPUT= False
