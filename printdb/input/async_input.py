@@ -224,9 +224,6 @@ async def insert_cursor(full: str, cursor: int) -> str:
 
     cursor = max(0, min(cursor, len(full)))
     cursor_character = full[cursor] if cursor < len(full) else " "
-
-
-        
     
     return (
         full[:cursor]
@@ -274,8 +271,14 @@ async def input(prompt: str, history: list[str] | None = None, rules: list[Autof
             stdout.write(f"\r{prompt}{display}")
             last = len(display)
 
+
+            #CHECKING IF WE SHOULD QUIT
+            if character in ("\n", "\r"):
+                return "".join(strip_ansi(display))
+
     finally:
         stdout.write("\x1b[?25h") #clear
+        stdout.write("\x1b[27m") #get rid of cursor
         stdout.flush()
         
 async def input_o(prompt: str, history: list[str] | None = None, rules: list[AutofillRule] | None = None):
