@@ -1,6 +1,6 @@
 import asyncio
 import sys
-from typing import overload
+from typing import Callable, overload
 from printdb.logging.colors import *
 from printdb.parsing.tokenizer import *
 import printdb.api as api
@@ -91,6 +91,7 @@ class AutofillRule():
         self.on_char = on_char
         self.text_replacement = text_replacement
         self.on_tab = on_tab
+        self.on_tab_func: Callable|None = None
         self.cancel = cancel_char
 
     @classmethod
@@ -134,6 +135,29 @@ class AutofillRule():
             return st
         return AutofillRule(on_char=autofill, text_replacement=True, on_tab=tab,cancel_char=True)
 
+    @classmethod
+    def ghost(cls, start: list[str], options: list[str]) -> AutofillRule:
+        def on_char(st: str, autofill:bool=False):
+            joined = "".join(start)
+            formatted = strip_ansi(st.strip(" ").strip("\t"))
+            if formatted.startswith(joined):
+                parts_after = formatted[len(joined):-1]
+                if parts_after == "":
+                    return st
+
+                parts_after = parts_after.strip(" ").strip("\t")
+                for opt in options:
+                    if parts_after.startswith(opt[0:len(parts_after)]):
+                        if not autofill:
+                            return f"{st[:-2]}\x1b[27m\033[90m{opt[len(parts_after):-1]}\033[0m"
+                        else:
+                            return f"{st[:-2]}{opt[len(parts_after):-1]}"
+            return st
+
+        c = cls(on_char=on_char)
+        c.on_tab_func = on_char
+        return c
+    
 async def get_character(): #only used to combine the arrow keys lol
     char = await raw_getch()
     if char == "\x1b":
@@ -166,10 +190,15 @@ def strip_ansi(typed: str) -> str:
 
 
 def strip_ansi(typed: str | list[str]) -> list[str] | str:
-    if isinstance(typed, str):
-        t = list(typed)
-        return "".join([t for t in typed if not "\x7f" in t])
-    return [t for t in typed if not "\x7f" in typed]
+    import re
+
+    ansi = re.compile(
+        r"\x1b(?:\[[0-?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x1b\\)|[ -/]*[@-~])"
+    )
+    value = "".join(typed) if isinstance(typed, list) else typed
+    cleaned = ansi.sub("", value).replace("\x7f", "")
+
+    return list(cleaned) if isinstance(typed, list) else cleaned
 
 
 async def handle_cursor(typed: list[str], display: str) -> int:
@@ -254,6 +283,8 @@ async def input(prompt: str, history: list[str] | None = None, rules: list[Autof
         while True:
             character = await get_character()
             typed.append(character)
+
+        
             
             display = await generate_display(typed)
             cursor = await handle_cursor(typed, display)
@@ -268,18 +299,31 @@ async def input(prompt: str, history: list[str] | None = None, rules: list[Autof
             if last > 0:
                 stdout.write(f"\r{prompt}{" " * last}")
 
+
+            for rule in rules:
+                if rule.on_char:
+                    if (rule.on_tab and character == "\t") or (not rule.on_tab):
+                        display = colorize(rule.on_char(display))
+                        
             stdout.write(f"\r{prompt}{display}")
             last = len(display)
 
 
             #CHECKING IF WE SHOULD QUIT
             if character in ("\n", "\r"):
-                return "".join(strip_ansi(display))
+                break
 
     finally:
         stdout.write("\x1b[?25h") #clear
         stdout.write("\x1b[27m") #get rid of cursor
         stdout.flush()
+
+    final = "".join(strip_ansi(typed))
+    for rule in rules:
+        if rule.on_send:
+            final = colorize(rule.on_send(final))
+
+    return strip_ansi(final)
         
 async def input_o(prompt: str, history: list[str] | None = None, rules: list[AutofillRule] | None = None):
     if history == None:

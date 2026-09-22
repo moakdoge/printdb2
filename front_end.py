@@ -13,11 +13,20 @@ def resource_path(rel_path: str) -> str:
 manager.load_plugin_folder(f"{resource_path("plugins")}")
 prefetch = manager.get_prefetch()
 FIRST_RUN = True
+
+test_rule = AutofillRule(on_tab=True)
+
+
+def test(c):
+    return c
+
+test_rule.on_char = test
 autofill_rules = [
     AutofillRule.regex(r'(?<!")\b\d+(?:\.\d+)?\b(?!")(?=(?:[^"]*"[^"]*")*[^"]*$)', "[[red]]%s[[reset]]",at_end=False),
     AutofillRule.autofill(manager.get_command_names()),
     AutofillRule.replace(manager.get_command_names(), "[[bold]]%s[[reset]]", replace_text=False),
     AutofillRule.regex(r'"(?:\\.|[^"\\])*"',"[[yellow]]%s[[reset]]", at_end=False),
+    AutofillRule.ghost(["help"], ["option1", "command1"])
 ]
 
 ON_INPUT= False
