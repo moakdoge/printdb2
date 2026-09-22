@@ -81,7 +81,9 @@ class HintAutofillRule(BaseAutofillRule):
 
     def on_raw_character(self, char: str, full: str) -> str:
         if char == "\t" and self._last_autofilled:
-            start = "".join(self.start)
-            typed_option = full[len(start):].strip()
-            return f"{start} {self._last_autofilled}"
+            start = self.start
+            o = full[len(self.start):]
+
+            space_count = len(o) - len(o.lstrip(" "))
+            return f"{start}{" "*space_count}{self._last_autofilled}"
         return NotImplemented

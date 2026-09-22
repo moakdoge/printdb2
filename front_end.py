@@ -1,7 +1,7 @@
 from printdb.api import manager, ErrorCode
 from printdb.api.frontend import tokenizer, colorize, input_prompt
 import readline,os,asyncio
-from printdb.input.async_input import input, AutofillRule
+from printdb.input.async_input import BaseAutofillRule, input, AutofillRule
 import sys
 
 from printdb.input.autofillrules import HintAutofillRule, RegexAutofillRule
@@ -23,13 +23,16 @@ def test(c):
     return c
 
 test_rule.on_char = test
-autofill_rules = [
+autofill_rules: list[BaseAutofillRule] = [
     RegexAutofillRule(r'(?<!")\b\d+(?:\.\d+)?\b(?!")(?=(?:[^"]*"[^"]*")*[^"]*$)', "[[red]]%s[[reset]]"),
    # AutofillRule.autofill(manager.get_command_names()),
    # AutofillRule.replace(manager.get_command_names(), "[[bold]]%s[[reset]]", replace_text=False),
    # AutofillRule.regex(r'"(?:\\.|[^"\\])*"',"[[yellow]]%s[[reset]]", at_end=False),
     HintAutofillRule("help", ["option1", "command1"])
 ]
+
+for command_name in manager.get_command_names():
+    autofill_rules.append(HintAutofillRule("", [command_name]))
 
 ON_INPUT= False
 async def main():

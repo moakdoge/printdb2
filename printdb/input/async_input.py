@@ -329,11 +329,15 @@ async def input(prompt: str, history: list[str] | None = None, rules: list[BaseA
         stdout.write("\x1b[27m") #get rid of cursor
         stdout.flush()
 
+
+    typed = [t for t in typed if t != "\x1b[7m"]
     final = "".join(strip_ansi(typed))
     for rule in rules:
         new = rule.on_send(final)
         if new is not NotImplemented:
             final = colorize(new)
+
+
 
     return strip_ansi(final)
         
