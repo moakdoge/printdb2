@@ -1,5 +1,6 @@
 import asyncio
 import sys
+from typing import overload
 from printdb.logging.colors import *
 from printdb.parsing.tokenizer import *
 import printdb.api as api
@@ -133,8 +134,151 @@ class AutofillRule():
             return st
         return AutofillRule(on_char=autofill, text_replacement=True, on_tab=tab,cancel_char=True)
 
+async def get_character(): #only used to combine the arrow keys lol
+    char = await raw_getch()
+    if char == "\x1b":
+        new = char
+        part2 = await raw_getch()
+        if part2 == "[":
+            letter = await raw_getch()
+            if letter in ("A", "B", "C", "D"):
+                return new + part2 + letter
+    return char
 
+
+async def generate_display(typed: list[str]) -> str:
+    new = []
+    for char in typed:
+        match char:
+            case "\x1b[A" | "\x1b[B" | "\x1b[C" | "\x1b[D":
+                pass
+            case _:
+                new.append(char)
+
+    return "".join(new)
+            
+@overload
+def strip_ansi(typed: list[str] ) -> list[str]:
+    ...
+@overload
+def strip_ansi(typed: str) -> str:
+    ...
+
+
+def strip_ansi(typed: str | list[str]) -> list[str] | str:
+    if isinstance(typed, str):
+        t = list(typed)
+        return "".join([t for t in typed if not "\x7f" in t])
+    return [t for t in typed if not "\x7f" in typed]
+
+
+async def handle_cursor(typed: list[str], display: str) -> int:
+    '''Gets the position of the cursor'''
+    start = 0
+    display_length = len(strip_ansi(display))
+    for char in typed:
+        match char:
+            case "\x1b[A": #UP
+                pass
+
+            case "\x1b[B": #DOWN
+                pass
+
+            case "\x1b[C": #RIGHT
+                start += 1
+
+            case "\x1b[D": #LEFT
+                start -= 1
+
+            case "\x08" | "\x7f":
+                start -= 1
+
+            case _:
+                start += 1
+                pass
+
+        start = max(min(start, display_length+1), 0)
+
+    return start
+
+async def handle_backspace(typed: list[str], cursor: int) -> None:
+    try:
+        backspace_index = len(typed) - 1 - typed[::-1].index("\x7f")
+    except ValueError:
+        return
+
+    visible_indices = [
+        index
+        for index, value in enumerate(typed[:backspace_index])
+        if not value.startswith("\x1b") and value not in ("\x08", "\x7f")
+    ]
+
+    typed.pop(backspace_index)
+    if 0 <= cursor < len(visible_indices):
+        typed.pop(visible_indices[cursor])
+    
+
+async def insert_cursor(full: str, cursor: int) -> str:
+    CURSOR_ENABLED = "\x1b[7m"
+    CURSOR_DISABLED = "\x1b[27m"
+
+    cursor = max(0, min(cursor, len(full)))
+    cursor_character = full[cursor] if cursor < len(full) else " "
+
+
+        
+    
+    return (
+        full[:cursor]
+        + CURSOR_ENABLED
+        + cursor_character
+        + CURSOR_DISABLED
+        + full[cursor + 1:]
+    )
+
+    
 async def input(prompt: str, history: list[str] | None = None, rules: list[AutofillRule] | None = None):
+    history = history if history is not None else []
+    history = [h for h in history if h.strip() != ""]
+    rules = rules if rules is not None else []
+
+    #core setup
+    stdout.write("\x1b[?25l")  # hide cursor
+    stdout.write("\r" + prompt)
+    stdout.flush()
+
+    #input
+    typed: list[str] = []
+    last: int = 0
+
+    
+
+    try:
+        while True:
+            character = await get_character()
+            typed.append(character)
+            
+            display = await generate_display(typed)
+            cursor = await handle_cursor(typed, display)
+            display = await insert_cursor(display, cursor)
+
+            if character in ("\x08", "\x7f"):
+                await handle_backspace(typed, cursor)
+                display = await generate_display(typed)
+                cursor = await handle_cursor(typed, display)
+                display = await insert_cursor(display, cursor)
+
+            if last > 0:
+                stdout.write(f"\r{prompt}{" " * last}")
+
+            stdout.write(f"\r{prompt}{display}")
+            last = len(display)
+
+    finally:
+        stdout.write("\x1b[?25h") #clear
+        stdout.flush()
+        
+async def input_o(prompt: str, history: list[str] | None = None, rules: list[AutofillRule] | None = None):
     if history == None:
         history = []
     if rules == None:
@@ -150,16 +294,6 @@ async def input(prompt: str, history: list[str] | None = None, rules: list[Autof
     ind = len(history)
     
 
-    async def get_character(): #only used to combine the arrow keys lol
-        char = await raw_getch()
-        if char == "\x1b":
-            new = char
-            part2 = await raw_getch()
-            if part2 == "[":
-                letter = await raw_getch()
-                if letter in ("A", "B", "C", "D"):
-                    return new + part2 + letter
-        return char
     try:
         while True:
             char = await get_character()
