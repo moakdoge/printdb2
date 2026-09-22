@@ -277,13 +277,16 @@ async def input(prompt: str, history: list[str] | None = None, rules: list[BaseA
     #input
     typed: list[str] = []
     last: int = 0
-
-    
+    skip_next: bool = False
+    character = ""
 
     try:
         while True:
-            character = await get_character()
-            typed.append(character)
+            #character = ""
+            if not skip_next:
+                character = await get_character()
+                typed.append(character)
+            skip_next = False
 
         
             
@@ -302,19 +305,16 @@ async def input(prompt: str, history: list[str] | None = None, rules: list[BaseA
 
 
             for rule in rules:
-
                 raw = "".join(strip_ansi(typed))
                 new_raw = rule.on_raw_character(character, raw)
-                if new_raw is not NotImplemented:
+                if new_raw != NotImplemented:
                     typed = (list(new_raw))
-                    display = await generate_display(typed)
-                    cursor = await handle_cursor(typed, display)
-                    display = await insert_cursor(display, cursor)
+                    skip_next = True
                     
                 output_display = rule.on_character(character, display)
-                if output_display is not NotImplemented:
-                    display = output_display
-                
+                if output_display != NotImplemented:
+                    display = colorize(output_display)
+
                         
             stdout.write(f"\r{prompt}{display}")
             last = len(display)

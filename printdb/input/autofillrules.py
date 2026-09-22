@@ -31,12 +31,20 @@ class RegexAutofillRule(BaseAutofillRule):
         self.replacement = replacement
 
     def on_character(self, char: str, full: str) -> str:
+        from printdb.input.async_input import strip_ansi
+
+        full = strip_ansi(full)
+
         def repl(match):
             if "%s" in self.replacement:
-                return colorize(self.replacement % match.group(0))
+                return self.replacement % match.group(0)
             else:
-                return colorize(self.replacement)
-        return re.sub(self.regex, repl, full)
+                return self.replacement
+
+        subbed = re.sub(self.regex, repl, full) 
+        if subbed == full:
+            return NotImplemented
+        return subbed
     
 
 class HintAutofillRule(BaseAutofillRule):
@@ -53,14 +61,14 @@ class HintAutofillRule(BaseAutofillRule):
 
         if not raw.startswith(start):
             self._last_autofilled = None
-            return full
+            return NotImplemented
 
         typed_option = raw[len(start):]
 
 
         if typed_option == "":
             self._last_autofilled = None
-            return full
+            return NotImplemented
 
         typed_option = typed_option.strip()
         for option in self.options:
@@ -69,11 +77,11 @@ class HintAutofillRule(BaseAutofillRule):
                 return f"{raw}\x1b[90m{option[len(typed_option):]}\033[0m"
 
         self._last_autofilled = None
-        return full
+        return NotImplemented
 
     def on_raw_character(self, char: str, full: str) -> str:
         if char == "\t" and self._last_autofilled:
             start = "".join(self.start)
             typed_option = full[len(start):].strip()
             return f"{start} {self._last_autofilled}"
-        return full
+        return NotImplemented
